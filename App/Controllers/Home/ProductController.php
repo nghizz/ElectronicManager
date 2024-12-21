@@ -2,7 +2,7 @@
 
 namespace App\Controllers\Home;
 
-use App\Services\ProductService;
+use App\Services\Home\ProductService;
 
 class ProductController 
 {

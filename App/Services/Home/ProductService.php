@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Home;
 
 use App\Models\Home\Product;
+
 
 class ProductService
 {

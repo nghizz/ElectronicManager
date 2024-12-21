@@ -39,8 +39,9 @@ $applicationAspectKernel->init(
 );
 
 // Khởi tạo các controller cần thiết
-$productController = new ProductController();
-$cartController = new CartController();
+$productController = $container->make(ProductController::class);
+$cartController = $container->make(CartController::class);
+
 
 // Xử lý các yêu cầu từ người dùng
 if (isset($_GET["action"]) && $_GET["action"] == "add" && isset($_GET["id"])) {
