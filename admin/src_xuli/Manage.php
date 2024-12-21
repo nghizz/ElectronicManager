@@ -1,4 +1,21 @@
 <?php
+require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
+
+use App\AspectKernel; 
+
+// Khởi tạo AspectKernel
+$kernel = AspectKernel::getInstance();
+$kernel->init([
+    'debug'       => true,
+    'appDir'      => __DIR__ . '/../app',
+    'cacheDir'    => __DIR__ . '/../cache',
+    'configFile'  => __DIR__ . '/../config/aop.xml',
+    'includePaths' => [__DIR__ . '/../app'],
+    'excludePaths' => [__DIR__ . '/../vendor']
+]);
+?>
+
+<?php
 session_start();
 ?>
 
@@ -93,8 +110,9 @@ session_start();
             <?php
             $conn = new mysqli("localhost", "root", "", "webapp");
             if ($conn->connect_error) {
-              die("Connection failed: " . $conn->connect_error);
-            }
+                echo "<p style='color: red;'>Lỗi kết nối cơ sở dữ liệu: " . htmlspecialchars($conn->connect_error) . "</p>";
+                exit;
+            }            
             $conn->set_charset("utf8");
 
             $perPage = 3; // Số dòng trên mỗi trang
@@ -117,6 +135,7 @@ session_start();
             $stmt->execute();
             $result = $stmt->get_result();
 
+            if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
               echo "<tr>
         <td style='text-align: center'>" . htmlspecialchars($row['id']) . "</td>
@@ -127,6 +146,9 @@ session_start();
         <td>" . htmlspecialchars($row['created_at']) . "</td>
     </tr>";
             }
+          } else {
+            echo "<tr><td colspan='7'>Không tìm thấy kết quả nào</td></tr>";
+          }
             $stmt->close();
             $conn->close();
             ?>
@@ -204,8 +226,9 @@ session_start();
             <?php
             $conn = new mysqli("localhost", "root", "", "webapp");
             if ($conn->connect_error) {
-              die("Connection failed: " . $conn->connect_error);
-            }
+                echo "<p style='color: red;'>Lỗi kết nối cơ sở dữ liệu: " . htmlspecialchars($conn->connect_error) . "</p>";
+                exit;
+            }            
             $conn->set_charset("utf8");
 
             $perPage = 4; // thay đổi số ô sẽ hiển thị. Ví dụ: bảng dữ liệu có 3 ô

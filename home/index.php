@@ -1,30 +1,55 @@
 <?php
-session_start();
+// Tải các thư viện và cấu hình cần thiết
+require_once __DIR__ . '../../vendor/autoload.php';
 
-$conn = new mysqli("localhost", "root", "", "webapp");
+use App\Controllers\Home\ProductController;
+use App\Controllers\Home\CartController;
+use App\AspectKernel;
+use App\Models\Connection;
+use App\Services\AuthService;
 
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-$conn->set_charset("utf8");
+// Khởi tạo Dependency Injection Container
+$container = new \Illuminate\Container\Container();
 
-// Xử lý thêm sản phẩm vào giỏ hàng
+$container->singleton(\Psr\Log\LoggerInterface::class, function () {
+    return new \Monolog\Logger('app');
+});
+
+
+$container->singleton(AuthService::class, function () {
+    // Lấy kết nối PDO từ lớp Database
+    $pdo = Connection::getInstance();
+    return new AuthService($pdo);
+});
+
+// Khởi tạo AspectKernel
+$applicationAspectKernel = AspectKernel::getInstance();
+$applicationAspectKernel->init(
+    [
+        'debug'         => true,
+        'appDir'        => __DIR__ . '/../',
+        'cacheDir'      => __DIR__ . '/../cache',
+        'includePaths'  => [
+            __DIR__ . '/../src'
+        ],
+        'excludePaths' => [
+            __DIR__ . '/../vendor/goaop/framework' // Loại trừ thư mục Go AOP khỏi weaving
+        ]
+    ]
+);
+
+// Khởi tạo các controller cần thiết
+$productController = new ProductController();
+$cartController = new CartController();
+
+// Xử lý các yêu cầu từ người dùng
 if (isset($_GET["action"]) && $_GET["action"] == "add" && isset($_GET["id"])) {
-    $product_id = intval($_GET["id"]);
-    if ($product_id > 0) {
-        if (isset($_SESSION["cart"][$product_id])) {
-            $_SESSION["cart"][$product_id]++;
-        } else {
-            $_SESSION["cart"][$product_id] = 1;
-        }
-    }
+    $cartController->addToCart($_GET["id"]);
 }
 
-// Lấy thông tin tất cả sản phẩm từ database
-$sql = "SELECT * FROM products";
-$result = $conn->query($sql);
+// Lấy danh sách sản phẩm từ database
+$products = $productController->index();
 
-$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -67,56 +92,28 @@ $conn->close();
 <body>
     <div class="hbot">
         <div class="container">
-            <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-                <a class="navbar-brand" href="#">L2N SHOP</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ml-auto">
-                        <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
-                        <li class="nav-item">
-                            <form class="form-inline my-2 my-lg-0" action="search.php" method="get">
-                                <input class="form-control mr-sm-2" type="search" name="search" placeholder="Tìm kiếm..." aria-label="Search">
-                                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Tìm</button>
-                            </form>
-                        </li>
-                        <li class="nav-item"><a class="nav-link" href="phone.php">Điện thoại</a></li>
-                        <li class="nav-item"><a class="nav-link" href="mac.php">Laptop</a></li>
-                        <li class="nav-item"><a class="nav-link" href="phukien.php">Phụ kiện</a></li>
-                        <li class="nav-item">
-                            <a href="cart.php" class="btn btn-primary">Giỏ hàng</a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
+            <?php include 'partials/navbar.php'; ?>
         </div>
     </div>
 
     <div class="content">
         <div class="container">
             <div class="row">
-                <?php
-                if ($result->num_rows > 0) {
-                    while ($row = $result->fetch_assoc()) {
-                        echo "<div class='col-md-4'>";
-                        echo "<a href='details.php?id=" . $row["id"] . "' class='product-card'>";
-                        echo "<div class='card'>";
-                        echo "<img src='" . $row["image"] . "' alt='" . $row["name"] . "' class='card-img-top'>";
-                        echo "<div class='card-body'>";
-                        echo "<h5 class='card-title'>" . $row["name"] . "</h5>";
-                        echo "<p class='card-text'>Giá: " . $row["price"] . " VND</p>";
-                        echo "<a href='?action=add&id=" . $row["id"] . "' class='btn btn-success'>Mua ngay</a> ";
-                        echo "<a href='?action=add&id=" . $row["id"] . "' class='btn btn-info'>Thêm vào giỏ hàng</a>";
-                        echo "</div>";  // Close card-body
-                        echo "</div>";  // Close card
-                        echo "</a>";
-                        echo "</div>";  // Close col-md-4
-                    }
-                } else {
-                    echo "<div class='col-12'><p class='text-center'>Không có sản phẩm nào.</p></div>";
-                }
-                ?>
+                <?php foreach ($products as $product): ?>
+                    <div class='col-md-4'>
+                        <a href='details.php?id=<?= $product->id ?>' class='product-card'>
+                            <div class='card'>
+                                <img src='<?= $product->image ?>' alt='<?= $product->name ?>' class='card-img-top'>
+                                <div class='card-body'>
+                                    <h5 class='card-title'><?= $product->name ?></h5>
+                                    <p class='card-text'>Giá: <?= $product->price ?> VND</p>
+                                    <a href='?action=add&id=<?= $product->id ?>' class='btn btn-success'>Mua ngay</a>
+                                    <a href='?action=add&id=<?= $product->id ?>' class='btn btn-info'>Thêm vào giỏ hàng</a>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                <?php endforeach; ?>
             </div>
         </div>
     </div>
@@ -128,7 +125,8 @@ $conn->close();
     </footer>
 
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <!-- Thêm các script JS khác ở đây -->
 </body>
 </html>
