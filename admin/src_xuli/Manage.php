@@ -1,22 +1,11 @@
 <?php
-require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
+require_once __DIR__ . '/../../bootstrap.php';
+\Project\ApplicationAspectKernel::applyAop();
 
-use App\AspectKernel; 
+use App\Controllers\Admin\ProductController;
 
-// Khởi tạo AspectKernel
-$kernel = AspectKernel::getInstance();
-$kernel->init([
-    'debug'       => true,
-    'appDir'      => __DIR__ . '/../app',
-    'cacheDir'    => __DIR__ . '/../cache',
-    'configFile'  => __DIR__ . '/../config/aop.xml',
-    'includePaths' => [__DIR__ . '/../app'],
-    'excludePaths' => [__DIR__ . '/../vendor']
-]);
-?>
-
-<?php
-session_start();
+$productController = new ProductController();
+$products = $productController->index(); 
 ?>
 
 <!DOCTYPE html>
@@ -110,9 +99,8 @@ session_start();
             <?php
             $conn = new mysqli("localhost", "root", "", "webapp");
             if ($conn->connect_error) {
-                echo "<p style='color: red;'>Lỗi kết nối cơ sở dữ liệu: " . htmlspecialchars($conn->connect_error) . "</p>";
-                exit;
-            }            
+              die("Connection failed: " . $conn->connect_error);
+            }
             $conn->set_charset("utf8");
 
             $perPage = 3; // Số dòng trên mỗi trang
@@ -135,7 +123,6 @@ session_start();
             $stmt->execute();
             $result = $stmt->get_result();
 
-            if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
               echo "<tr>
         <td style='text-align: center'>" . htmlspecialchars($row['id']) . "</td>
@@ -146,9 +133,6 @@ session_start();
         <td>" . htmlspecialchars($row['created_at']) . "</td>
     </tr>";
             }
-          } else {
-            echo "<tr><td colspan='7'>Không tìm thấy kết quả nào</td></tr>";
-          }
             $stmt->close();
             $conn->close();
             ?>
@@ -169,138 +153,45 @@ session_start();
   <!-- HIỂN THỊ SẢN PHẨM -->
   <section class="section home-section" id="products">
     <div class="text">
-      <h2>Bảng Sản Phẩm</h2>
-      <button style="background-color: #6bff70; /* Màu xanh lá cây */
-                      border: none;
-                      color: white;
-                      padding: 10px 20px;
-                      text-align: center;
-                      display: inline-block;
-                      font-size: 16px;
-                      margin: 4px 2px;
-                      cursor: pointer;
-                      border-radius: 5px;">
-        <a style="text-decoration: none; color : black;" href="../formadd_product.php">Thêm sản phẩm</a>
-      </button>
-      <div class="search-bar" style="margin-top: 15px; margin-bottom: 15px;">
-        <form action="" method="get">
-          <input type="text" name="search-products" placeholder="Nhập tên sản phẩm" style="padding: 10px; width: 20%; font-size: 16px; border: 1px solid #ccc; border-radius: 5px;">
-          <button type="submit" style="background-color: #dfe9df; /* Màu xanh lá cây */
-                                             border: none;
-                                             padding: 10px 20px;
-                                             text-align: center;
-                                             display: inline-block;
-                                             font-size: 16px;
-                                             cursor: pointer;
-                                             border-radius: 5px;">Tìm kiếm</button>
+        <h2>Bảng Sản Phẩm</h2>
 
-          <?php
-          // Kiểm tra nếu có từ khóa tìm kiếm để hiển thị nút "Xem tất cả"
-          if (isset($_GET['search-products']) && !empty(trim($_GET['search-products']))) {
-            echo "<button type='button' onclick='window.location.href=\"Manage.php#products\"' style='background-color: #dfe9df; /* Màu xanh lá cây */
-                    border: none;
-                    padding: 10px 20px;
-                    text-align: center;
-                    display: inline-block;
-                    font-size: 16px;
-                    cursor: pointer;
-                    border-radius: 5px; margin-left: 10px;'>Xem tất cả</button>";
-          }
-          ?>
-        </form>
-      </div>
-      <div class="data-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Mã sản phẩm</th>
-              <th>Tên sản phẩm</th>
-              <th>Hình ảnh</th>
-              <th>Giá</th>
-              <th>Mô tả</th>
-              <th>Số lượng</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php
-            $conn = new mysqli("localhost", "root", "", "webapp");
-            if ($conn->connect_error) {
-                echo "<p style='color: red;'>Lỗi kết nối cơ sở dữ liệu: " . htmlspecialchars($conn->connect_error) . "</p>";
-                exit;
-            }            
-            $conn->set_charset("utf8");
-
-            $perPage = 4; // thay đổi số ô sẽ hiển thị. Ví dụ: bảng dữ liệu có 3 ô
-            $currentPage = isset($_GET['page_products']) ? (int)$_GET['page_products'] : 1;
-            $offset = ($currentPage - 1) * $perPage;
-
-            $searchTerm = isset($_GET['search-products']) ? $conn->real_escape_string($_GET['search-products']) : '';
-
-            $countQuery = "SELECT COUNT(*) AS count FROM products";
-            if ($searchTerm) {
-              $countQuery .= " WHERE name LIKE '%$searchTerm%'";
-            }
-            $countResult = $conn->query($countQuery);
-            $countRow = $countResult->fetch_assoc();
-            $totalProducts = $countRow['count'];
-
-            $totalPages = ceil($totalProducts / $perPage);
-
-            $query = "SELECT * FROM products";
-            if ($searchTerm) {
-              $query .= " WHERE name LIKE '%$searchTerm%'";
-            }
-            $query .= " LIMIT ?, ?";
-            $stmt = $conn->prepare($query);
-            $stmt->bind_param("ii", $offset, $perPage);
-            $stmt->execute();
-            $result = $stmt->get_result();
-
-            if ($result->num_rows > 0) {
-              while ($row = $result->fetch_assoc()) {
-                $description = htmlspecialchars($row['description']);
-                //kiểm tra ô mô tả, nếu có hơn 100 ký tự thì thay bằng dấu ... để bảng sản phẩm gọn hơn
-                if (strlen($description) > 100) {
-                  $description = substr($description, 0, 100) . '...';
-                }
-                echo "<tr>
-                        <td style='text-align: center'>" . htmlspecialchars($row['id']) . "</td>
-                        <td>" . htmlspecialchars($row['name']) . "</td>
-                        <td><img src='" . htmlspecialchars($row['image']) . "' alt='Hình ảnh' style='width: 50px; height: 50px;'></td>
-                        <td>" . htmlspecialchars($row['price']) . "</td>
-                        <td style='white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;'>" . $description . "</td>
-                        <td>" . htmlspecialchars($row['number']) . "</td>
-                        <td>
-                            <button style='background-color: #a3a19d; border: none; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 5px;'>
-                                <a style='text-decoration: none; color : white;' href='../form_update.php?id=" . htmlspecialchars($row['id']) . "'>Sửa</a>
-                            </button>
-                            <button style='background-color: #ff6363; border: none; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 5px;'>
-                                <a style='text-decoration: none; color : white;' href='../src_xuli/delete.php?id=" . htmlspecialchars($row['id']) . "'>Xóa</a>
-                            </button>
-                        </td>
-                    </tr>";
-              }
-            } else {
-              echo "<tr><td colspan='7'>Không có sản phẩm</td></tr>";
-            }
-
-            $stmt->close();
-            $conn->close();
-            ?>
-          </tbody>
-        </table>
-        <div style="text-align:center">
-          <?php
-          for ($i = 1; $i <= $totalPages; $i++) {
-            $searchParam = $searchTerm ? "&search-products=$searchTerm" : '';
-            echo "<a style='text-decoration: none; margin: 0 5px;' href='?page_products=$i$searchParam#products'>$i </a>";
-          }
-          ?>
+        <div class="data-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã sản phẩm</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Hình ảnh</th>
+                        <th>Giá</th>
+                        <th>Mô tả</th>
+                        <th>Số lượng</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($products as $product) : ?>
+                        <tr>
+                            <td style='text-align: center'><?= htmlspecialchars($product['id']) ?></td>
+                            <td><?= htmlspecialchars($product['name']) ?></td>
+                            <td><img src='<?= htmlspecialchars($product['image']) ?>' alt='Hình ảnh' style='width:50px; height:50px;'></td>
+                            <td><?= htmlspecialchars($product['price']) ?></td>
+                            <td style='white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;'><?= htmlspecialchars($product['description']) ?></td>
+                            <td><?= htmlspecialchars($product['number']) ?></td>
+                            <td>
+                                <button>
+                                    <a href='/ElectronicManager/public/admin/products/<?= htmlspecialchars($product['id']) ?>/edit'>Sửa</a>
+                                </button>
+                                <button>
+                                    <a href='/ElectronicManager/public/admin/products/<?= htmlspecialchars($product['id']) ?>/delete'>Xóa</a>
+                                </button>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
-      </div>
     </div>
-  </section>
+</section>
 
 
   <script>

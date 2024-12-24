@@ -12,9 +12,7 @@
       <input type="password" name="password" placeholder="Mật khẩu" required>
       <input type="submit" value="Đăng nhập">
     </form>
-    <!-- <div class="message">
-      Chưa có tài khoản? <a href="Register.php">Đăng ký</a>
-    </div> -->
+
   </div>
 </body>
 </html>

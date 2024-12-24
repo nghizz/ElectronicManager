@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Aspects;
 
 use Go\Aop\Aspect;
@@ -6,6 +7,9 @@ use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
 use Psr\Log\LoggerInterface;
 
+/**
+ * Aspect xử lý lỗi
+ */
 class ErrorHandlingAspect implements Aspect
 {
     private $logger;
@@ -16,21 +20,19 @@ class ErrorHandlingAspect implements Aspect
     }
 
     /**
-     * @Around("execution(public App\Controllers\*->*(*))")
+     * @Around("execution(public App\Controllers\Admin\ProductController->*(*))")
      */
     public function handleError(MethodInvocation $invocation)
     {
         try {
-            // Thực thi method
+            // Thực thi phương thức
             return $invocation->proceed();
         } catch (\Exception $e) {
             // Ghi log lỗi
-            $this->logger->error("Exception: " . $e->getMessage());
+            $this->logger->error('Lỗi: ' . $e->getMessage());
 
-            // Hiển thị thông báo lỗi thân thiện
-            echo "Đã xảy ra lỗi. Vui lòng thử lại sau."; 
-            // Hoặc chuyển hướng đến trang lỗi
-            // header('Location: /error');
+            // Hiển thị thông báo lỗi hoặc chuyển hướng
+            echo "Đã xảy ra lỗi. Vui lòng thử lại sau.";
             exit;
         }
     }

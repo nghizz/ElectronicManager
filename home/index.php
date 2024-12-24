@@ -4,9 +4,6 @@ require_once __DIR__ . '../../vendor/autoload.php';
 
 use App\Controllers\Home\ProductController;
 use App\Controllers\Home\CartController;
-use App\AspectKernel;
-use App\Models\Connection;
-use App\Services\AuthService;
 
 // Khởi tạo Dependency Injection Container
 $container = new \Illuminate\Container\Container();
@@ -16,15 +13,8 @@ $container->singleton(\Psr\Log\LoggerInterface::class, function () {
 });
 
 
-$container->singleton(AuthService::class, function () {
-    // Lấy kết nối PDO từ lớp Database
-    $pdo = Connection::getInstance();
-    return new AuthService($pdo);
-});
-
 // Khởi tạo AspectKernel
-$applicationAspectKernel = AspectKernel::getInstance();
-$applicationAspectKernel->init(
+$applicationAspectKernel = AspectKernel::getInstance()->init(
     [
         'debug'         => true,
         'appDir'        => __DIR__ . '/../',

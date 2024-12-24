@@ -10,6 +10,7 @@ class ProductService
     public function getAllProducts()
     {
         return Product::all(); // Chắc chắn `Product` đã định nghĩa phương thức `all()`
+        return $products;
     }
 
     public function getProductById($productId)
