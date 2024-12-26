@@ -13,4 +13,6 @@ if (session_status() == PHP_SESSION_NONE) {
 // Xử lý đăng nhập
 $controller = new LoginController();
 $controller->handleLogin();
+
 ?>
+

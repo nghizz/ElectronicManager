@@ -12,6 +12,7 @@ use App\Aspects\ErrorHandlingAspect;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use App\Services\Admin\AuthService;
+use Doctrine\Common\Annotations\AnnotationRegistry;
 
 class ApplicationAspectKernel extends AspectKernel
 {
@@ -39,8 +40,10 @@ class ApplicationAspectKernel extends AspectKernel
             'debug' => true,
             'appDir' => __DIR__ . '/App',
             'includePaths' => [__DIR__ . '/App'],
-            'cacheDir' => __DIR__ . '/../cache',
+            'cacheDir' => __DIR__ . '/cache',
         ]);
+
+        AnnotationRegistry::registerLoader('class_exists');
         $logger = new Logger('app');
         $logger->pushHandler(new StreamHandler('C:/xampp/htdocs/ElectronicManager/logs/test_app.log', Logger::DEBUG));
         $logger->info("AOP applied successfully.");

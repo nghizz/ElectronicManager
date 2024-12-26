@@ -4,7 +4,6 @@ namespace App\Aspects;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Before;
-use Go\Lang\Annotation\After;
 use Psr\Log\LoggerInterface;
 use App\Services\Admin\AuthService;
 
@@ -22,7 +21,7 @@ class AuthenticationAspect implements Aspect
     /**
      * @Before("execution(public App\Services\Admin\AuthService->login())")
      */
-    public function logAfterLogin(\Go\Aop\Intercept\MethodInvocation $invocation)
+    public function logAfterLogin(MethodInvocation $invocation)
     {
         // Lấy các tham số của phương thức login
         $arguments = $invocation->getArguments();

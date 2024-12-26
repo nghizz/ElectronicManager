@@ -5,6 +5,7 @@ namespace App\Aspects;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
 use Psr\Log\LoggerInterface;
+use Go\Aop\Annotation\Around;  // Import đúng annotation @Around
 
 class LoggingAspect implements Aspect
 {
