@@ -1,20 +1,22 @@
 <?php
 namespace App\Services\Admin;
 
-use App\Models\Connection;
+use App\Models\Admin\User;
 
 class AuthService
 {
-    public function login(string $username, string $password): bool
-    {
-        $conn = Connection::getInstance();
-        $stmt = $conn->prepare("SELECT * FROM taikhoan WHERE username = :username AND password = :password");
-        $stmt->bindParam(':username', $username);
-        $stmt->bindParam(':password', $password);
-        $stmt->execute();
+    private $userModel;
 
-        if ($stmt->rowCount() === 1) {
-            $user = $stmt->fetch();
+    public function __construct()
+    {
+        $this->userModel = new User();
+    }
+
+    public function login($username, $password)
+    {
+        $user = $this->userModel->getUserByCredentials($username, $password);
+
+        if ($user) {
             $_SESSION['user_id'] = $user['username'];
             return true;
         }
@@ -22,3 +24,5 @@ class AuthService
         return false;
     }
 }
+
+?>

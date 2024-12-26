@@ -1,12 +1,17 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
-\Project\ApplicationAspectKernel::applyAop();
-
 use App\Controllers\Admin\ProductController;
 
+// Khởi tạo AOP
+\Project\ApplicationAspectKernel::applyAop();
+
+// Gọi ProductController
 $productController = new ProductController();
-$products = $productController->index(); 
+$products = $productController->index();
+error_log("ProductController index executed.");
+
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en" dir="ltr">

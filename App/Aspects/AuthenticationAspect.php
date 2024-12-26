@@ -1,31 +1,35 @@
 <?php
-
 namespace App\Aspects;
 
-use App\Controllers\Admin\LoginController;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Before;
-use App\Controllers\Admin;
+use Go\Lang\Annotation\After;
+use Psr\Log\LoggerInterface;
+use App\Services\Admin\AuthService;
 
-/**
- * Aspect kiểm tra xác thực người dùng
- */
 class AuthenticationAspect implements Aspect
 {
-    /**
-     * @Before("execution(public App\Controllers\Admin\*->*(*))")
-     */
-    public function checkLogin(MethodInvocation $invocation)
-    {
-        // Kiểm tra xem người dùng đã đăng nhập chưa
-        if (!isset($_SESSION['user_id'])) {
-            // Nếu chưa đăng nhập, chuyển hướng đến trang đăng nhập
-            header('Location: /ElectronicManager/admin/login.php');
-            exit;
-        }
+    private $logger;
+    private $authService;
 
-        // Nếu đã đăng nhập, cho phép truy cập phương thức
-        return $invocation->proceed();
+    public function __construct(LoggerInterface $logger, AuthService $authService)
+    {
+        $this->logger = $logger;
+        $this->authService = $authService;  // Khởi tạo authService
+    }
+
+    /**
+     * @Before("execution(public App\Services\Admin\AuthService->login())")
+     */
+    public function logAfterLogin(\Go\Aop\Intercept\MethodInvocation $invocation)
+    {
+        // Lấy các tham số của phương thức login
+        $arguments = $invocation->getArguments();
+        $username = $arguments[0] ?? 'unknown';
+
+        // Ghi log
+        $this->logger->info("AuthenticationAspect: Login process completed for user '{$username}'.");
     }
 }
+?>

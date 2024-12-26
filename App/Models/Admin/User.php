@@ -1,7 +1,9 @@
 <?php
 
 namespace App\Models\Admin;
+
 use App\Models\Connection;
+use PDO;
 
 class User
 {
@@ -12,15 +14,14 @@ class User
         $this->conn = Connection::getInstance();
     }
 
-    public function getUser($username, $password)
+    public function getUserByCredentials($username, $password)
     {
-        $stmt = $this->conn->prepare("SELECT * FROM taikhoan WHERE username = ? AND password = ?");
-        $stmt->execute([$username, $password]);
+        $query = "SELECT * FROM taikhoan WHERE username = :username AND password = :password";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':username', $username);
+        $stmt->bindParam(':password', $password);
+        $stmt->execute();
 
-        if ($stmt->rowCount() > 0) {
-            return $stmt->fetch(\PDO::FETCH_ASSOC);
-        } else {
-            return null;
-        }
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }

@@ -145,7 +145,7 @@ class ComposerStaticInit1629b9df50b082a216acf4e2a93e981b
         ),
         'Project\\' => 
         array (
-            0 => __DIR__ . '/../..' . '/src',
+            0 => __DIR__ . '/../..' . '/Project',
         ),
         'PhpParser\\' => 
         array (

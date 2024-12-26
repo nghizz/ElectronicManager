@@ -2,39 +2,41 @@
 
 namespace App\Services\Home;
 
-use App\Models\Home\Product;
-
 class CartService
 {
-    public function addProductToCart($productId)
+    /**
+     * Thêm sản phẩm vào giỏ hàng
+     */
+    public function addToCart($productId, $quantity = 1)
     {
-        session_start();
         if (!isset($_SESSION['cart'])) {
             $_SESSION['cart'] = [];
         }
-        $_SESSION['cart'][] = $productId;
-    }
 
-    public function removeProductFromCart($productId)
-    {
-        session_start();
-        if (isset($_SESSION['cart'])) {
-            $_SESSION['cart'] = array_filter($_SESSION['cart'], function ($id) use ($productId) {
-                return $id !== $productId;
-            });
+        if (isset($_SESSION['cart'][$productId])) {
+            $_SESSION['cart'][$productId] += $quantity;
+        } else {
+            $_SESSION['cart'][$productId] = $quantity;
         }
     }
 
-    public function getCartProducts()
+    /**
+     * Lấy thông tin giỏ hàng
+     */
+    public function getCart()
     {
-        session_start();
-        if (!isset($_SESSION['cart'])) {
-            return [];
-        }
+        return $_SESSION['cart'] ?? [];
+    }
 
-        // Giả sử `Product` có phương thức để lấy thông tin theo ID
-        return array_map(function ($productId) {
-            return Product::find($productId);
-        }, $_SESSION['cart']);
+    /**
+     * Cập nhật số lượng sản phẩm
+     */
+    public function updateQuantity($productId, $quantity)
+    {
+        if ($quantity <= 0) {
+            unset($_SESSION['cart'][$productId]);
+        } else {
+            $_SESSION['cart'][$productId] = $quantity;
+        }
     }
 }

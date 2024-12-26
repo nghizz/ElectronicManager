@@ -4,36 +4,27 @@ namespace App\Aspects;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation\Around;
-use Psr\Log\LoggerInterface;
+use Go\Lang\Annotation\AfterThrowing;
+use Monolog\Logger;
 
-/**
- * Aspect xử lý lỗi
- */
 class ErrorHandlingAspect implements Aspect
 {
     private $logger;
 
-    public function __construct(LoggerInterface $logger)
+    public function __construct(Logger $logger)
     {
         $this->logger = $logger;
     }
 
     /**
-     * @Around("execution(public App\Controllers\Admin\ProductController->*(*))")
+     * @AfterThrowing(pointcut="execution(public App\Services\..*(..))", throwing="exception")
      */
-    public function handleError(MethodInvocation $invocation)
+    public function logErrors(MethodInvocation $invocation, \Throwable $exception)
     {
-        try {
-            // Thực thi phương thức
-            return $invocation->proceed();
-        } catch (\Exception $e) {
-            // Ghi log lỗi
-            $this->logger->error('Lỗi: ' . $e->getMessage());
+        $method = $invocation->getMethod()->getName();
+        $className = get_class($invocation->getThis());
+        $errorMessage = $exception->getMessage();
 
-            // Hiển thị thông báo lỗi hoặc chuyển hướng
-            echo "Đã xảy ra lỗi. Vui lòng thử lại sau.";
-            exit;
-        }
+        $this->logger->error("Lỗi xảy ra: {$errorMessage}", ['trace' => $exception->getTraceAsString()]);
     }
 }

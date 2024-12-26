@@ -4,7 +4,6 @@ namespace App\Aspects;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation\Around;
 use Psr\Log\LoggerInterface;
 
 class LoggingAspect implements Aspect
@@ -17,26 +16,14 @@ class LoggingAspect implements Aspect
     }
 
     /**
-     * @Around("execution(public App\Services\Admin\AuthService->login(*))") 
+     * @Around("execution(* App\Services\Admin\AuthService->login(..))")
      */
-    public function logLogin(MethodInvocation $invocation)
+    public function aroundLogin(MethodInvocation $invocation)
     {
+        error_log("AOP aroundLogin triggered.");
         $arguments = $invocation->getArguments();
-        $username = $arguments[0] ?? 'Unknown'; 
-
-        try {
-            $this->logger->debug('Login attempt: ' . $username); 
-            $result = $invocation->proceed(); 
-
-            if ($result) {
-                $this->logger->info('Login successful: ' . $username);
-            } else {
-                $this->logger->warning('Login failed: ' . $username); 
-            }
-            return $result;
-        } catch (\Exception $e) {
-            $this->logger->error('Login error: ' . $username . ' - ' . $e->getMessage());
-            throw $e; 
-        }
+        $username = $arguments[0] ?? 'unknown';
+        $this->logger->info("Around advice: User '{$username}' is attempting to log in.");
+        return $invocation->proceed();
     }
 }
