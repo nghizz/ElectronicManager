@@ -10,36 +10,22 @@ class ClassConst extends Node\Stmt
     public $flags;
     /** @var Node\Const_[] Constant declarations */
     public $consts;
-    /** @var Node\AttributeGroup[] PHP attribute groups */
-    public $attrGroups;
-    /** @var Node\Identifier|Node\Name|Node\ComplexType|null Type declaration */
-    public $type;
 
     /**
      * Constructs a class const list node.
      *
-     * @param Node\Const_[]                                          $consts     Constant declarations
-     * @param int                                                    $flags      Modifiers
-     * @param array                                                  $attributes Additional attributes
-     * @param Node\AttributeGroup[]                                  $attrGroups PHP attribute groups
-     * @param null|string|Node\Identifier|Node\Name|Node\ComplexType $type       Type declaration
+     * @param Node\Const_[] $consts     Constant declarations
+     * @param int           $flags      Modifiers
+     * @param array         $attributes Additional attributes
      */
-    public function __construct(
-        array $consts,
-        int $flags = 0,
-        array $attributes = [],
-        array $attrGroups = [],
-        $type = null
-    ) {
+    public function __construct(array $consts, int $flags = 0, array $attributes = []) {
         $this->attributes = $attributes;
         $this->flags = $flags;
         $this->consts = $consts;
-        $this->attrGroups = $attrGroups;
-        $this->type = \is_string($type) ? new Node\Identifier($type) : $type;
     }
 
     public function getSubNodeNames() : array {
-        return ['attrGroups', 'flags', 'type', 'consts'];
+        return ['flags', 'consts'];
     }
 
     /**
@@ -69,16 +55,7 @@ class ClassConst extends Node\Stmt
     public function isPrivate() : bool {
         return (bool) ($this->flags & Class_::MODIFIER_PRIVATE);
     }
-
-    /**
-     * Whether constant is final.
-     *
-     * @return bool
-     */
-    public function isFinal() : bool {
-        return (bool) ($this->flags & Class_::MODIFIER_FINAL);
-    }
-
+    
     public function getType() : string {
         return 'Stmt_ClassConst';
     }
