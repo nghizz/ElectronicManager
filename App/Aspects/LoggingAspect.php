@@ -1,11 +1,11 @@
 <?php
-
 namespace App\Aspects;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
+use Go\Aop\Annotation\Before;
+use Go\Aop\Annotation\After;
 use Psr\Log\LoggerInterface;
-use Go\Aop\Annotation\Around;  // Import đúng annotation @Around
 
 class LoggingAspect implements Aspect
 {
@@ -17,14 +17,26 @@ class LoggingAspect implements Aspect
     }
 
     /**
-     * @Around("execution(* App\Services\Admin\AuthService->login(..))")
+     * Ghi log trước khi phương thức 'login' trong AuthService được gọi
+     * @Before("execution(public App\Services\Admin\AuthService->login(*, *))")
      */
-    public function aroundLogin(MethodInvocation $invocation)
+    public function beforeLogin(MethodInvocation $invocation)
     {
-        error_log("AOP aroundLogin triggered.");
         $arguments = $invocation->getArguments();
         $username = $arguments[0] ?? 'unknown';
-        $this->logger->info("Around advice: User '{$username}' is attempting to log in.");
-        return $invocation->proceed();
+        
+        $this->logger->info("Before login attempt for user '{$username}'");
+    }
+
+    /**
+     * Ghi log sau khi phương thức 'login' trong AuthService được gọi
+     * @After("execution(public App\Services\Admin\AuthService->login(*, *))")
+     */
+    public function afterLogin(MethodInvocation $invocation)
+    {
+        $arguments = $invocation->getArguments();
+        $username = $arguments[0] ?? 'unknown';
+        
+        $this->logger->info("After login attempt for user '{$username}'");
     }
 }

@@ -8,7 +8,9 @@ use App\Controllers\Admin\ProductController;
 // Gọi ProductController
 $productController = new ProductController();
 $products = $productController->index();
-error_log("ProductController index executed.");
+
+// Ghi log sản phẩm (nếu cần)
+error_log("ProductController index executed with products: " . print_r($products, true));
 
 ?>
 

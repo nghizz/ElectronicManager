@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\Admin;
 
 use App\Models\Admin\User;
@@ -20,9 +21,6 @@ class AuthService
             $_SESSION['user_id'] = $user['username'];
             return true;
         }
-
         return false;
     }
 }
-
-?>
