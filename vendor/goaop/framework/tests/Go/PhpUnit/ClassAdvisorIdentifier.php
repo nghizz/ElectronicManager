@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -15,33 +17,23 @@ namespace Go\PhpUnit;
  */
 final class ClassAdvisorIdentifier
 {
-    /**
-     * @var string
-     */
-    private $class;
+    private string $class;
 
-    /**
-     * @var string
-     */
-    private $subject;
+    private string $subject;
 
-    /**
-     * @var string
-     */
-    private $target;
+    private string $target;
 
-    /**
-     * @var string
-     */
-    private $advisorIdentifier;
+    private ?string $advisorIdentifier;
 
-    /**
-     * @var null|int
-     */
-    private $index;
+    private ?int $index;
 
-    public function __construct($class, $subject, $target, $advisorIdentifier = null, $index = null)
-    {
+    public function __construct(
+        $class,
+        string $subject,
+        string $target,
+        string $advisorIdentifier = null,
+        int $index = null
+    ) {
         $this->class             = is_object($class) ? get_class($class) : $class;
         $this->subject           = $subject;
         $this->advisorIdentifier = $advisorIdentifier;
@@ -51,20 +43,16 @@ final class ClassAdvisorIdentifier
 
     /**
      * Get full qualified class name.
-     *
-     * @return string
      */
-    public function getClass()
+    public function getClass(): string
     {
         return $this->class;
     }
 
     /**
      * Get name of subject (method, property...) of interception.
-     *
-     * @return string
      */
-    public function getSubject()
+    public function getSubject(): string
     {
         return $this->subject;
     }
@@ -72,35 +60,29 @@ final class ClassAdvisorIdentifier
     /**
      * Get weaving target.
      *
-     * @see \Go\Core\AspectContainer::METHOD_PREFIX
-     * @see \Go\Core\AspectContainer::PROPERTY_PREFIX
-     * @see \Go\Core\AspectContainer::STATIC_METHOD_PREFIX
-     * @see \Go\Core\AspectContainer::INIT_PREFIX
-     * @see \Go\Core\AspectContainer::STATIC_INIT_PREFIX
-     *
-     * @return string
+     * @see AspectContainer::METHOD_PREFIX
+     * @see AspectContainer::PROPERTY_PREFIX
+     * @see AspectContainer::STATIC_METHOD_PREFIX
+     * @see AspectContainer::INIT_PREFIX
+     * @see AspectContainer::STATIC_INIT_PREFIX
      */
-    public function getTarget()
+    public function getTarget(): string
     {
         return $this->target;
     }
 
     /**
      * Get get advisor identifier.
-     *
-     * @return string
      */
-    public function getAdvisorIdentifier()
+    public function getAdvisorIdentifier(): ?string
     {
         return $this->advisorIdentifier;
     }
 
     /**
      * Get join point ordering index.
-     *
-     * @return int|null
      */
-    public function getIndex()
+    public function getIndex(): ?int
     {
         return $this->index;
     }

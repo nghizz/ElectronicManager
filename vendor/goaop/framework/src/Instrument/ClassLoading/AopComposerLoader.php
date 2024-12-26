@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -10,59 +12,46 @@
 
 namespace Go\Instrument\ClassLoading;
 
+use SplFileInfo;
 use Go\Core\AspectContainer;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Composer\Autoload\ClassLoader;
-use Doctrine\Common\Annotations\AnnotationRegistry;
 
 /**
  * AopComposerLoader class is responsible to use a weaver for classes instead of original one
  */
 class AopComposerLoader
 {
-
     /**
      * Instance of original autoloader
-     *
-     * @var ClassLoader
      */
-    protected $original;
+    protected ClassLoader $original;
 
     /**
      * AOP kernel options
-     *
-     * @var array
      */
-    protected $options = [];
+    protected array $options = [];
 
     /**
      * File enumerator
-     *
-     * @var Enumerator
      */
-    protected $fileEnumerator;
+    protected Enumerator $fileEnumerator;
 
     /**
      * Cache state
-     *
-     * @var array
      */
-    private $cacheState;
+    private array $cacheState;
 
     /**
      * Was initialization successful or not
-     *
-     * @var bool
      */
-    private static $wasInitialized = false;
+    private static bool $wasInitialized = false;
 
     /**
      * Constructs an wrapper for the composer loader
      *
-     * @param ClassLoader $original Instance of current loader
-     * @param AspectContainer $container Instance of the container
      * @param array $options Configuration options
      */
     public function __construct(ClassLoader $original, AspectContainer $container, array $options = [])
@@ -78,40 +67,27 @@ class AopComposerLoader
             if (isset($prefixes['Dissect'])) {
                 $excludePaths[] = $prefixes['Dissect'][0];
             }
-            if (isset($prefixes['Doctrine\\Common\\Annotations\\'])) {
-                $excludePaths[] = substr($prefixes['Doctrine\\Common\\Annotations\\'][0], 0, -16);
-            }
         }
 
         $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $excludePaths);
         $this->fileEnumerator = $fileEnumerator;
-        $this->cacheState     = $container->get('aspect.cache.path.manager')->queryCacheState();
+        $this->cacheState     = $container->getService(CachePathManager::class)->queryCacheState();
     }
 
     /**
-     * Initialize aspect autoloader
+     * Initialize aspect autoloader and returns status whether initialization was successful or not
      *
      * Replaces original composer autoloader with wrapper
      *
      * @param array $options Aspect kernel options
-     * @param AspectContainer $container
-     *
-     * @return bool was initialization sucessful or not
      */
-    public static function init(array $options, AspectContainer $container)
+    public static function init(array $options, AspectContainer $container): bool
     {
         $loaders = spl_autoload_functions();
 
         foreach ($loaders as &$loader) {
             $loaderToUnregister = $loader;
             if (is_array($loader) && ($loader[0] instanceof ClassLoader)) {
-                $originalLoader = $loader[0];
-                // Configure library loader for doctrine annotation loader
-                AnnotationRegistry::registerLoader(function($class) use ($originalLoader) {
-                    $originalLoader->loadClass($class);
-
-                    return class_exists($class, false);
-                });
                 $loader[0] = new AopComposerLoader($loader[0], $container, $options);
                 self::$wasInitialized = true;
             }
@@ -128,10 +104,8 @@ class AopComposerLoader
 
     /**
      * Autoload a class by it's name
-     *
-     * @param string $class Name of the class to load
      */
-    public function loadClass($class)
+    public function loadClass(string $class): void
     {
         $file = $this->findFile($class);
 
@@ -144,10 +118,9 @@ class AopComposerLoader
      * Finds either the path to the file where the class is defined,
      * or gets the appropriate php://filter stream for the given class.
      *
-     * @param string $class
      * @return string|false The path/resource if found, false otherwise.
      */
-    public function findFile($class)
+    public function findFile(string $class)
     {
         static $isAllowedFilter = null, $isProduction = false;
         if (!$isAllowedFilter) {
@@ -159,10 +132,10 @@ class AopComposerLoader
 
         if ($file !== false) {
             $file = PathResolver::realpath($file)?:$file;
-            $cacheState = isset($this->cacheState[$file]) ? $this->cacheState[$file] : null;
+            $cacheState = $this->cacheState[$file] ?? null;
             if ($cacheState && $isProduction) {
                 $file = $cacheState['cacheUri'] ?: $file;
-            } elseif ($isAllowedFilter(new \SplFileInfo($file))) {
+            } elseif ($isAllowedFilter(new SplFileInfo($file))) {
                 // can be optimized here with $cacheState even for debug mode, but no needed right now
                 $file = FilterInjectorTransformer::rewrite($file);
             }
@@ -173,10 +146,8 @@ class AopComposerLoader
 
     /**
      * Whether or not loader was initialized
-     *
-     * @return bool
      */
-    public static function wasInitialized()
+    public static function wasInitialized(): bool
     {
         return self::$wasInitialized;
     }

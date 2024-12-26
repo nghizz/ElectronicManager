@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Test\ns1
 {
     class ClassWithSelf extends \Exception
@@ -6,6 +8,8 @@ namespace Test\ns1
         const CLASS_CONST = \Test\ns1\ClassWithSelf::class;
 
         private static $foo = 42;
+
+        private \Test\ns1\ClassWithSelf $instance;
 
         public function acceptsAndReturnsSelf(\Test\ns1\ClassWithSelf $instance): \Test\ns1\ClassWithSelf
         {

@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -12,68 +14,48 @@ namespace Go\Aop\Support;
 
 use Go\Aop\Advice;
 use Go\Aop\Pointcut;
+use Go\Aop\Pointcut\PointcutLexer;
+use Go\Aop\Pointcut\PointcutParser;
+use Go\Aop\PointcutAdvisor;
 use Go\Core\AspectContainer;
 
 /**
  * Lazy pointcut advisor is used to create a delayed pointcut only when needed
  */
-class LazyPointcutAdvisor extends AbstractGenericPointcutAdvisor
+final class LazyPointcutAdvisor implements PointcutAdvisor
 {
+    /**
+     * Instance of parsed pointcut, might be uninitialized if not parsed yet
+     */
+    private Pointcut $pointcut;
 
     /**
-     * Pointcut expression
+     * Creates the LazyPointcutAdvisor by specifying textual pointcut expression and Advice to run when Pointcut matches.
      *
-     * @var string
+     * @param string $pointcutExpression Pointcut expression represented with string
      */
-    private $pointcutExpression;
+    public function __construct(
+        private readonly AspectContainer $container,
+        private readonly string          $pointcutExpression,
+        private readonly Advice          $advice
+    ) {}
 
-    /**
-     * Instance of parsed pointcut
-     *
-     * @var Pointcut|null
-     */
-    private $pointcut;
-
-    /**
-     * @var AspectContainer
-     */
-    private $container;
-
-    /**
-     * Create a DefaultPointcutAdvisor, specifying Pointcut and Advice.
-     *
-     * @param AspectContainer $container Instance of container
-     * @param string $pointcutExpression The Pointcut targeting the Advice
-     * @param Advice $advice The Advice to run when Pointcut matches
-     */
-    public function __construct(AspectContainer $container, $pointcutExpression, Advice $advice)
+    public function getPointcut(): Pointcut
     {
-        $this->container          = $container;
-        $this->pointcutExpression = $pointcutExpression;
-        parent::__construct($advice);
-    }
-
-    /**
-     * Get the Pointcut that drives this advisor.
-     *
-     * @return Pointcut The pointcut
-     */
-    public function getPointcut()
-    {
-        if ($this->pointcut === null) {
-            // Inject this dependencies and make them lazy!
-            // should be extracted from AbstractAspectLoaderExtension into separate class
-
-            /** @var Pointcut\PointcutLexer $lexer */
-            $lexer = $this->container->get('aspect.pointcut.lexer');
-
-            /** @var Pointcut\PointcutParser $parser */
-            $parser = $this->container->get('aspect.pointcut.parser');
+        if (!isset($this->pointcut)) {
+            // Inject these dependencies and make them lazy!
+            $lexer  = $this->container->getService(PointcutLexer::class);
+            $parser = $this->container->getService(PointcutParser::class);
 
             $tokenStream    = $lexer->lex($this->pointcutExpression);
             $this->pointcut = $parser->parse($tokenStream);
         }
 
         return $this->pointcut;
+    }
+
+    public function getAdvice(): Advice
+    {
+        return $this->advice;
     }
 }

@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -10,136 +12,97 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Aop\Support\AnnotatedReflectionMethod;
 use ReflectionMethod;
+use function array_merge;
+use function array_pop;
+use function count;
 
 /**
  * Abstract method invocation implementation
  */
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation
 {
+    protected readonly ReflectionMethod $reflectionMethod;
 
     /**
-     * Instance of object for invoking or class name for static call
+     * This static string variable holds the name of field to use to avoid extra "if" section in the __invoke method
      *
-     * @var object|string
+     * Overridden in children classes and initialized via LSB
      */
-    protected $instance;
+    protected static string $propertyName;
 
     /**
-     * Instance of reflection method for class
+     * Stack frames to work with recursive calls or with cross-calls inside object
      *
-     * @var ReflectionMethod
+     * @var (array&array<int, array{array<mixed>, object|class-string, int}>)
      */
-    protected $reflectionMethod;
-
-    /**
-     * Name of the invocation class
-     *
-     * @var string
-     */
-    protected $className = '';
+    private array $stackFrames = [];
 
     /**
      * Constructor for method invocation
      *
-     * @param string $className Class name
-     * @param string $methodName Method to invoke
-     * @param $advices array List of advices for this invocation
+     * @param array<Interceptor>        $advices List of advices for this invocation
+     * @param (string&class-string)     $className Class, containing method to invoke
+     * @param (string&non-empty-string) $methodName Name of the method to invoke
      */
-    public function __construct($className, $methodName, array $advices)
+    public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices);
-        $this->className        = $className;
-        $this->reflectionMethod = $method = new AnnotatedReflectionMethod($this->className, $methodName);
+        $reflectionMethod = new ReflectionMethod($className, $methodName);
 
-        // Give an access to call protected method
-        if ($method->isProtected()) {
-            $method->setAccessible(true);
+        // If we have method inside AOP proxy class, we would like to use prototype instead
+        if ($reflectionMethod->hasPrototype()) {
+            $reflectionMethod = $reflectionMethod->getPrototype();
         }
+        $this->reflectionMethod = $reflectionMethod;
     }
 
-    /**
-     * Invokes current method invocation with all interceptors
-     *
-     * @param null|object|string $instance Invocation instance (class name for static methods)
-     * @param array $arguments List of arguments for method invocation
-     * @param array $variadicArguments Additional list of variadic arguments
-     *
-     * @return mixed Result of invocation
-     */
-    final public function __invoke($instance = null, array $arguments = [], array $variadicArguments = [])
+    final public function __invoke(object|string $instanceOrScope, array $arguments = [], array $variadicArguments = []): mixed
     {
-        if ($this->level) {
-            $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];
+        if ($this->level > 0) {
+            $this->stackFrames[] = [$this->arguments, $this->{static::$propertyName}, $this->current];
         }
 
-        if (!empty($variadicArguments)) {
-            $arguments = \array_merge($arguments, $variadicArguments);
+        if (count($variadicArguments) > 0) {
+            $arguments = array_merge($arguments, $variadicArguments);
         }
 
         try {
             ++$this->level;
 
             $this->current   = 0;
-            $this->instance  = $instance;
             $this->arguments = $arguments;
+
+            $this->{static::$propertyName} = $instanceOrScope;
 
             return $this->proceed();
         } finally {
             --$this->level;
 
-            if ($this->level > 0) {
-                list($this->arguments, $this->instance, $this->current) = \array_pop($this->stackFrames);
+            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
+                [$this->arguments, $this->{static::$propertyName}, $this->current] = $stackFrame;
             } else {
-                $this->instance  = null;
+                unset($this->{static::$propertyName});
                 $this->arguments = [];
             }
         }
     }
 
-    /**
-     * Gets the method being called.
-     *
-     * @return AnnotatedReflectionMethod the method being called.
-     */
-    public function getMethod()
+    public function getMethod(): ReflectionMethod
     {
         return $this->reflectionMethod;
     }
 
     /**
-     * Returns the object that holds the current joinpoint's static
-     * part.
-     *
-     * @return object|string the object for dynamic call or string with name of scope
-     */
-    public function getThis()
-    {
-        return $this->instance;
-    }
-
-    /**
-     * Returns the static part of this joinpoint.
-     *
-     * @return object
-     */
-    public function getStaticPart()
-    {
-        return $this->getMethod();
-    }
-
-    /**
      * Returns friendly description of this joinpoint
-     *
-     * @return string
      */
-    final public function __toString()
+    final public function __toString(): string
     {
         return sprintf(
             'execution(%s%s%s())',
-            is_object($this->instance) ? get_class($this->instance) : $this->instance,
+            $this->getScope(),
             $this->reflectionMethod->isStatic() ? '::' : '->',
             $this->reflectionMethod->name
         );

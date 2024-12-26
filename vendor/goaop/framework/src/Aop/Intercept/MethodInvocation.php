@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -10,34 +12,33 @@
 
 namespace Go\Aop\Intercept;
 
-use Go\Aop\Support\AnnotatedReflectionMethod;
 use ReflectionMethod;
 
 /**
- * Description of an invocation to a method, given to an interceptor
- * upon method-call.
+ * MethodInvocation interface represents an invocation of given method in the program.
  *
- * A method invocation is a joinpoint and can be intercepted by a method
- * interceptor.
+ * A method invocation is a joinpoint and can be intercepted by a method interceptor.
+ *
+ * Interceptor can read or modify invocation arguments via {@see Invocation} interface or
+ * receive full information about invoked method via {@see self::getMethod()} method.
+ *
+ * @api
  */
-interface MethodInvocation extends Invocation
+interface MethodInvocation extends Invocation, ClassJoinpoint
 {
-
     /**
      * Gets the method being called.
      *
-     * @return ReflectionMethod|AnnotatedReflectionMethod the method being called.
+     * @api
      */
-    public function getMethod();
+    public function getMethod(): ReflectionMethod;
 
     /**
      * Invokes current method invocation with all interceptors
      *
-     * @param null|object|string $instance Invocation instance (class name for static methods)
-     * @param array $arguments List of arguments for method invocation
-     * @param array $variadicArguments Additional list of variadic arguments
-     *
-     * @return mixed Result of invocation
+     * @phpstan-param object|class-string $instanceOrScope    Invocation instance (or class name for static methods)
+     * @phpstan-param list<mixed>         $arguments          List of arguments for method invocation
+     * @phpstan-param list<mixed>         $variadicArguments  Additional list of variadic arguments
      */
-    public function __invoke($instance = null, array $arguments = [], array $variadicArguments = []);
+    public function __invoke(object|string $instanceOrScope, array $arguments = [], array $variadicArguments = []): mixed;
 }

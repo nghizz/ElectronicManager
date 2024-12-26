@@ -1,30 +1,74 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace Go\Aop\Framework;
 
-class AbstractMethodInvocationTest extends \PHPUnit_Framework_TestCase
-{
-    /**
-     * @var AbstractMethodInvocation
-     */
-    protected $invocation;
+use PHPUnit\Framework\TestCase;
 
-    public function setUp()
+class AbstractMethodInvocationTest extends TestCase
+{
+    protected AbstractMethodInvocation $invocation;
+
+    public function setUp(): void
     {
         $this->invocation = $this->getMockForAbstractClass(
             AbstractMethodInvocation::class,
-            [__CLASS__, __FUNCTION__, []]
+            [[], self::class, __FUNCTION__]
         );
     }
 
-    public function testInvocationReturnsMethod()
+    public function testInvocationReturnsMethod(): void
     {
-        $this->assertEquals(__CLASS__, $this->invocation->getMethod()->class);
+        // AbstractMethodInvocation uses prototype methods to avoid hard-coded class sufixes
+        $this->assertEquals(parent::class, $this->invocation->getMethod()->class);
         $this->assertEquals('setUp', $this->invocation->getMethod()->name);
     }
 
-    public function testStaticPartEqualsToReflectionMethod()
+    /**
+     * @link https://github.com/goaop/framework/issues/481
+     */
+    public function testInstanceIsInitialized(): void
     {
-        $this->assertInstanceOf('ReflectionMethod', $this->invocation->getStaticPart());
+        $this->expectNotToPerformAssertions();
+
+        $o = new class extends AbstractMethodInvocation {
+
+            protected static string $propertyName = 'scope';
+
+            /**
+             * @var (string&class-string) Class name scope for static invocation
+             */
+            protected string $scope;
+
+            public function __construct()
+            {
+                parent::__construct([new AroundInterceptor(function () {})], AbstractMethodInvocationTest::class, 'testInstanceIsInitialized');
+            }
+
+            public function isDynamic(): bool
+            {
+                return false;
+            }
+
+            public function getThis(): ?object
+            {
+                return null;
+            }
+
+            public function getScope(): string
+            {
+                return self::class;
+            }
+
+            public function proceed(): void
+            {
+                if ($this->level < 3) {
+                    $this->__invoke($this->scope);
+                }
+            }
+        };
+
+        $o->__invoke($o::class);
     }
 }

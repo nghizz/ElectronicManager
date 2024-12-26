@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -11,65 +13,57 @@
 namespace Go\Core;
 
 use Go\Aop;
-use Go\Aop\Support\NamespacedReflectionFunction;
+use Go\Aop\IntroductionInfo;
+use Go\Aop\PointcutAdvisor;
+use Go\Aop\Pointcut;
 use Go\ParserReflection\ReflectionFileNamespace;
 use ReflectionClass;
+use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionProperty;
+
+use function count;
 
 /**
  * Advice matcher returns the list of advices for the specific point of code
  */
-class AdviceMatcher
+class AdviceMatcher implements AdviceMatcherInterface
 {
     /**
-     * Loader of aspects
-     *
-     * @var AspectLoader
-     */
-    protected $loader;
-
-    /**
      * Flag to enable/disable support of global function interception
-     *
-     * @var bool
      */
-    private $isInterceptFunctions;
+    private bool $isInterceptFunctions = false;
 
     /**
      * Constructor
      *
-     * @param AspectLoader $loader Instance of aspect loader
      * @param bool $isInterceptFunctions Optional flag to enable function interception
      */
-    public function __construct(AspectLoader $loader, $isInterceptFunctions = false)
+    public function __construct(bool $isInterceptFunctions = false)
     {
-        $this->loader = $loader;
-
         $this->isInterceptFunctions = $isInterceptFunctions;
     }
 
     /**
      * Returns list of function advices for namespace
      *
-     * @param ReflectionFileNamespace $namespace
-     * @param array|Aop\Advisor[] $advisors List of advisor to match
+     * @param Aop\Advisor[] $advisors List of advisor to match
      *
-     * @return array
+     * @return Aop\Advice[][][] List of advices for function
      */
-    public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors)
+    public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors): array
     {
-        if (!$this->isInterceptFunctions || $namespace->getName() === 'no-namespace') {
+        if (!$this->isInterceptFunctions) {
             return [];
         }
 
         $advices = [];
 
         foreach ($advisors as $advisorId => $advisor) {
-            if ($advisor instanceof Aop\PointcutAdvisor) {
+            if ($advisor instanceof PointcutAdvisor) {
                 $pointcut = $advisor->getPointcut();
-                $isFunctionAdvisor = $pointcut->getKind() & Aop\PointFilter::KIND_FUNCTION;
-                if ($isFunctionAdvisor && $pointcut->getClassFilter()->matches($namespace)) {
+                $isFunctionAdvisor = $pointcut->getKind() & Pointcut::KIND_FUNCTION;
+                if ($isFunctionAdvisor && $pointcut->matches($namespace)) {
                     $advices[] = $this->getFunctionAdvicesFromAdvisor($namespace, $advisor, $advisorId, $pointcut);
                 }
             }
@@ -85,12 +79,11 @@ class AdviceMatcher
     /**
      * Return list of advices for class
      *
-     * @param ReflectionClass $class Class to advise
      * @param array|Aop\Advisor[] $advisors List of advisor to match
      *
-     * @return array|Aop\Advice[] List of advices for class
+     * @return Aop\Advice[][][] List of advices for class
      */
-    public function getAdvicesForClass(ReflectionClass $class, array $advisors)
+    public function getAdvicesForClass(ReflectionClass $class, array $advisors): array
     {
         $classAdvices = [];
         $parentClass  = $class->getParentClass();
@@ -101,16 +94,14 @@ class AdviceMatcher
         }
 
         foreach ($advisors as $advisorId => $advisor) {
-            if ($advisor instanceof Aop\PointcutAdvisor) {
+            if ($advisor instanceof PointcutAdvisor) {
                 $pointcut = $advisor->getPointcut();
-                if ($pointcut->getClassFilter()->matches($class)) {
-                    $classAdvices[] = $this->getAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut);
+                if (($pointcut->getKind() & Pointcut::KIND_CLASS) && $pointcut->matches($class)) {
+                    $classAdvices[] = $this->getClassAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut);
                 }
-            }
 
-            if ($advisor instanceof Aop\IntroductionAdvisor) {
-                if ($advisor->getClassFilter()->matches($class)) {
-                    $classAdvices[] = $this->getIntroductionFromAdvisor($originalClass, $advisor, $advisorId);
+                if ($pointcut->matches($class)) {
+                    $classAdvices[] = $this->getClassLevelAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut);
                 }
             }
         }
@@ -122,40 +113,48 @@ class AdviceMatcher
     }
 
     /**
-     * Returns list of advices from advisor and point filter
-     *
-     * @param ReflectionClass $class Class to inject advices
-     * @param Aop\PointcutAdvisor $advisor Advisor for class
-     * @param string $advisorId Identifier of advisor
-     * @param Aop\PointFilter $filter Filter for points
-     *
-     * @return array
+     * Returns list of class advices from advisor and point filter
      */
-    private function getAdvicesFromAdvisor(
+    private function getClassAdvicesFromAdvisor(
         ReflectionClass $class,
-        Aop\PointcutAdvisor $advisor,
-        $advisorId,
-        Aop\PointFilter $filter
-    ) {
+        PointcutAdvisor $advisor,
+        string $advisorId,
+        Pointcut $pointcut
+    ): array {
         $classAdvices = [];
-        $filterKind   = $filter->getKind();
+        $pointcutKind = $pointcut->getKind();
+        $advice       = $advisor->getAdvice();
 
-        // Check class only for class filters
-        if ($filterKind & Aop\PointFilter::KIND_CLASS) {
-            if ($filter->matches($class)) {
-                // Dynamic initialization
-                if ($filterKind & Aop\PointFilter::KIND_INIT) {
-                    $classAdvices[AspectContainer::INIT_PREFIX]['root'][$advisorId] = $advisor->getAdvice();
-                }
-                // Static initalization
-                if ($filterKind & Aop\PointFilter::KIND_STATIC_INIT) {
-                    $classAdvices[AspectContainer::STATIC_INIT_PREFIX]['root'][$advisorId] = $advisor->getAdvice();
-                }
-            }
+        // Dynamic initialization (creation of instance with new)
+        if (($pointcutKind & Pointcut::KIND_INIT) !== 0) {
+            $classAdvices[AspectContainer::INIT_PREFIX]['root'][$advisorId] = $advice;
+        }
+        // Static initalization (when class just loaded)
+        if (($pointcutKind & Pointcut::KIND_STATIC_INIT) !== 0) {
+            $classAdvices[AspectContainer::STATIC_INIT_PREFIX]['root'][$advisorId] = $advice;
+        }
+        // Introduction which can add interfaces or traits
+        if (($pointcutKind & Pointcut::KIND_INTRODUCTION) !== 0 && $advice instanceof IntroductionInfo && !$class->isTrait()) {
+            $classAdvices = [...$this->getIntroductionAdvices($advice)];
         }
 
+        return $classAdvices;
+    }
+
+    /**
+     * Returns list of advices from advisor and point filter
+     */
+    private function getClassLevelAdvicesFromAdvisor(
+        ReflectionClass $class,
+        PointcutAdvisor $advisor,
+        string $advisorId,
+        Pointcut $pointcut
+    ): array {
+        $classAdvices = [];
+        $pointcutKind = $pointcut->getKind();
+
         // Check methods in class only for method filters
-        if ($filterKind & Aop\PointFilter::KIND_METHOD) {
+        if (($pointcutKind & Pointcut::KIND_METHOD) !== 0) {
             $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
             foreach ($class->getMethods($mask) as $method) {
                 // abstract and parent final methods could not be woven
@@ -164,7 +163,7 @@ class AdviceMatcher
                     continue;
                 }
 
-                if ($filter->matches($method, $class)) {
+                if ($pointcut->matches($class, $method)) {
                     $prefix = $method->isStatic() ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
                     $classAdvices[$prefix][$method->name][$advisorId] = $advisor->getAdvice();
                 }
@@ -172,10 +171,10 @@ class AdviceMatcher
         }
 
         // Check properties in class only for property filters
-        if ($filterKind & Aop\PointFilter::KIND_PROPERTY) {
-            $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED;
+        if (($pointcutKind & Pointcut::KIND_PROPERTY) !== 0) {
+            $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE;
             foreach ($class->getProperties($mask) as $property) {
-                if ($filter->matches($property, $class) && !$property->isStatic()) {
+                if ($pointcut->matches($class, $property) && !$property->isStatic()) {
                     $classAdvices[AspectContainer::PROPERTY_PREFIX][$property->name][$advisorId] = $advisor->getAdvice();
                 }
             }
@@ -187,56 +186,46 @@ class AdviceMatcher
     /**
      * Returns list of introduction advices from advisor
      *
-     * @param ReflectionClass $class Class to inject advices
-     * @param Aop\IntroductionAdvisor $advisor Advisor for class
-     * @param string $advisorId Identifier of advisor
-     *
-     * @return array
+     * @return IntroductionInfo[][][]
      */
-    private function getIntroductionFromAdvisor(
-        ReflectionClass $class,
-        Aop\IntroductionAdvisor $advisor,
-        $advisorId
-    ) {
+    private function getIntroductionAdvices(IntroductionInfo $introduction): array {
         $classAdvices = [];
-        // Do not make introduction for traits
-        if ($class->isTrait()) {
-            return $classAdvices;
+
+        $introducedTrait = $introduction->getTrait();
+        if (!empty($introducedTrait)) {
+            $introducedTrait = '\\' . ltrim($introducedTrait, '\\');
+
+            $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'][$introducedTrait] = $introduction;
         }
+        $introducedInterface = $introduction->getInterface();
+        if (!empty($introducedInterface)) {
+            $introducedInterface = '\\' . ltrim($introducedInterface, '\\');
 
-        $advice = $advisor->getAdvice();
-
-        $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX][$advisorId] = $advice;
+            $classAdvices[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'][$introducedInterface] = $introduction;
+        }
 
         return $classAdvices;
     }
 
     /**
      * Returns list of function advices for specific namespace
-     *
-     * @param ReflectionFileNamespace $namespace
-     * @param Aop\PointcutAdvisor $advisor Advisor for class
-     * @param string $advisorId Identifier of advisor
-     * @param Aop\PointFilter $pointcut Filter for points
-     *
-     * @return array
      */
     private function getFunctionAdvicesFromAdvisor(
         ReflectionFileNamespace $namespace,
-        Aop\PointcutAdvisor $advisor,
-        $advisorId,
-        Aop\PointFilter $pointcut
-    ) {
+        PointcutAdvisor $advisor,
+        string $advisorId,
+        Pointcut $pointcut
+    ): array {
         $functions = [];
         $advices   = [];
 
         $listOfGlobalFunctions = get_defined_functions();
         foreach ($listOfGlobalFunctions['internal'] as $functionName) {
-            $functions[$functionName] = new NamespacedReflectionFunction($functionName, $namespace->getName());
+            $functions[$functionName] = new ReflectionFunction($functionName);
         }
 
         foreach ($functions as $functionName => $function) {
-            if ($pointcut->matches($function, $namespace)) {
+            if ($pointcut->matches($namespace, $function)) {
                 $advices[AspectContainer::FUNCTION_PREFIX][$functionName][$advisorId] = $advisor->getAdvice();
             }
         }

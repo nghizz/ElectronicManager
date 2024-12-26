@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -10,7 +12,7 @@
 
 namespace Go\Aop\Framework;
 
-class BeforeInterceptorTest extends AbstractInterceptorTest
+class BeforeInterceptorTest extends AbstractInterceptorTestCase
 {
     public function testAdviceIsCalledBeforeInvocation()
     {

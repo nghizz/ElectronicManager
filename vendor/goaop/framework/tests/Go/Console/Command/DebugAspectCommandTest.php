@@ -1,10 +1,20 @@
 <?php
 
+declare(strict_types = 1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2017, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
 namespace Go\Console\Command;
 
-use Go\Functional\BaseFunctionalTest;
+use Go\Functional\BaseFunctionalTestCase;
 
-class DebugAspectCommandTest extends BaseFunctionalTest
+class DebugAspectCommandTest extends BaseFunctionalTestCase
 {
     public function testItDisplaysAspectsDebugInfo()
     {
@@ -17,7 +27,7 @@ class DebugAspectCommandTest extends BaseFunctionalTest
         ];
 
         foreach ($expected as $string) {
-            $this->assertContains($string, $output);
+            $this->assertStringContainsString($string, $output);
         }
     }
 }

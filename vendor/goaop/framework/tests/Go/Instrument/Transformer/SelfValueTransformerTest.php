@@ -1,25 +1,33 @@
 <?php
 
+declare(strict_types=1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2018, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
 namespace Go\Instrument\Transformer;
 
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class SelfValueTransformerTest extends \PHPUnit_Framework_TestCase
+class SelfValueTransformerTest extends TestCase
 {
-    /**
-     * @var SelfValueTransformer
-     */
-    protected $transformer;
+    protected SelfValueTransformer $transformer;
 
-    /**
-     * @var StreamMetaData|null
-     */
-    protected $metadata;
+    protected ?StreamMetaData $metadata;
 
      /**
      * {@inheritDoc}
      */
-    public function setUp()
+    public function setUp(): void
     {
         $this->transformer = new SelfValueTransformer(
             $this->getKernelMock([
@@ -32,34 +40,68 @@ class SelfValueTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * Returns a mock for kernel
      *
-     * @return \PHPUnit_Framework_MockObject_MockObject|\Go\Core\AspectKernel
+     * @return MockObject|AspectKernel
      */
-    protected function getKernelMock($options)
+    protected function getKernelMock(array $options): AspectKernel
     {
-        $mock = $this->getMockForAbstractClass(
-            AspectKernel::class,
-            [],
-            '',
-            false,
-            true,
-            true,
-            ['getOptions']
-        );
-        $mock->expects($this->any())
+        $mock = $this->createMock(AspectKernel::class);
+        $mock
             ->method('getOptions')
-            ->will(
-                $this->returnValue($options)
-            );
+            ->willReturn($options);
+
+        $mock
+            ->method('getContainer')
+            ->willReturn($this->createMock(AspectContainer::class));
+
         return $mock;
     }
 
-    public function testTransformerReplacesAllSelfPlaces()
+    #[DataProvider("filesDataProvider")]
+    public function testTransformerProcessFiles(
+        string $sourceFileWithContent,
+        string $fileWithExpectedContent,
+    ): void {
+        try {
+            $sourceFile     = fopen($sourceFileWithContent, 'rb');
+            $sourceContent  = stream_get_contents($sourceFile);
+            $sourceMetadata = new StreamMetaData($sourceFile, $sourceContent);
+            $this->transformer->transform($sourceMetadata);
+
+            $expected = file_get_contents($fileWithExpectedContent);
+            $this->assertSame($expected, $sourceMetadata->source);
+
+        } finally {
+            if (isset($sourceFile) && is_resource($sourceFile)) {
+                fclose($sourceFile);
+            }
+        }
+    }
+
+    public static function filesDataProvider(): \Generator
     {
-        $testFile = fopen(__DIR__ . '/_files/file-with-self.php', 'rb');
-        $content  = stream_get_contents($testFile);
-        $metadata = new StreamMetaData($testFile, $content);
-        $this->transformer->transform($metadata);
-        $expected = file_get_contents(__DIR__ . '/_files/file-with-self-transformed.php');
-        $this->assertSame($expected, (string) $metadata->source);
+        yield 'file-with-self.php' => [
+            __DIR__ . '/_files/file-with-self.php',
+            __DIR__ . '/_files/file-with-self-transformed.php'
+        ];
+        yield 'file-with-self-no-namespace.php' => [
+            __DIR__ . '/_files/file-with-self-no-namespace.php',
+            __DIR__ . '/_files/file-with-self-no-namespace-transformed.php'
+        ];
+        yield 'php80-file.php' => [
+            __DIR__ . '/_files/php80-file.php',
+            __DIR__ . '/_files/php80-file-transformed.php'
+        ];
+        yield 'php81-file.php' => [
+            __DIR__ . '/_files/php81-file.php',
+            __DIR__ . '/_files/php81-file-transformed.php'
+        ];
+        yield 'php82-file.php' => [
+            __DIR__ . '/_files/php82-file.php',
+            __DIR__ . '/_files/php82-file-transformed.php'
+        ];
+        yield 'anonymous-class.php' => [
+            __DIR__ . '/_files/anonymous-class.php',
+            __DIR__ . '/_files/anonymous-class-transformed.php'
+        ];
     }
 }

@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -14,6 +16,8 @@ use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionEngine;
 use InvalidArgumentException;
 use PhpParser\Node;
+use PhpToken;
+use function is_array, is_resource;
 
 /**
  * Stream metadata object
@@ -24,10 +28,8 @@ class StreamMetaData
 {
     /**
      * Mapping between array keys and properties
-     *
-     * @var array
      */
-    private static $propertyMap = [
+    private static array $propertyMap = [
         'stream_type'  => 'streamType',
         'wrapper_type' => 'wrapperType',
         'wrapper_data' => 'wrapperData',
@@ -37,17 +39,13 @@ class StreamMetaData
 
     /**
      * A label describing the underlying implementation of the stream.
-     *
-     * @var string
      */
-    public $streamType;
+    public string $streamType;
 
     /**
      * A label describing the protocol wrapper implementation layered over the stream.
-     *
-     * @var string
      */
-    public $wrapperType;
+    public string $wrapperType;
 
     /**
      * Wrapper-specific data attached to this stream.
@@ -58,40 +56,36 @@ class StreamMetaData
 
     /**
      * Array containing the names of any filters that have been stacked onto this stream.
-     *
-     * @var array
      */
-    public $filterList;
+    public array $filterList;
 
     /**
      * The URI/filename associated with this stream.
-     *
-     * @var string
      */
-    public $uri;
+    public string $uri;
 
     /**
      * Information about syntax tree
      *
      * @var Node[]
      */
-    public $syntaxTree;
+    public array $syntaxTree;
 
     /**
      * List of source tokens
      *
-     * @var array
+     * @var PhpToken[]
      */
-    public $tokenStream = [];
+    public array $tokenStream = [];
 
     /**
      * Creates metadata object from stream
      *
      * @param resource $stream Instance of stream
      * @param string $source Source code or null
-     * @throws \InvalidArgumentException for invalid stream
+     * @throws InvalidArgumentException for invalid stream
      */
-    public function __construct($stream, $source = null)
+    public function __construct($stream, string $source = null)
     {
         if (!is_resource($stream)) {
             throw new InvalidArgumentException('Stream should be valid resource');
@@ -108,7 +102,7 @@ class StreamMetaData
             $this->$mappedKey = $value;
         }
         $this->syntaxTree = ReflectionEngine::parseFile($this->uri, $source);
-        $this->setSource($source);
+        $this->setTokenStreamFromRawTokens(...ReflectionEngine::getParser()->getTokens());
     }
 
     /**
@@ -136,14 +130,14 @@ class StreamMetaData
 
     /**
      * Returns source code directly from tokens
-     *
-     * @return string
      */
-    private function getSource()
+    private function getSource(): string
     {
         $transformedSource = '';
         foreach ($this->tokenStream as $token) {
-            $transformedSource .= isset($token[1]) ? $token[1] : $token;
+            if ($token->id !== 0) {
+                $transformedSource .= $token->text;
+            }
         }
 
         return $transformedSource;
@@ -156,11 +150,17 @@ class StreamMetaData
      *
      * @param string $newSource
      */
-    private function setSource($newSource)
+    private function setSource(string $newSource): void
     {
-        $rawTokens = token_get_all($newSource);
-        foreach ($rawTokens as $index => $rawToken) {
-            $this->tokenStream[$index] = \is_array($rawToken) ? $rawToken : [T_STRING, $rawToken];
-        }
+        $rawTokens = PhpToken::tokenize($newSource);
+        $this->setTokenStreamFromRawTokens(...$rawTokens);
+    }
+
+    /**
+     * Sets an array of token identifiers for this file
+     */
+    public function setTokenStreamFromRawTokens(PhpToken ...$rawTokens): void
+    {
+        $this->tokenStream = $rawTokens;
     }
 }

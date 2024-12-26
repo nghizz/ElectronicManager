@@ -1,23 +1,31 @@
 <?php
 
-namespace Go\Instrument;
+declare(strict_types = 1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2016, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
 
-use Go\Instrument\FileSystem\Enumerator;
+namespace Go\Instrument\FileSystem;
+
+use PHPUnit\Framework\TestCase;
+use SplFileInfo;
 use Vfs\FileSystem;
 
-class EnumeratorTest extends \PHPUnit_Framework_TestCase
+class EnumeratorTest extends TestCase
 {
-
-    /** @var FileSystem */
-    protected static $fileSystem;
+    protected static FileSystem $fileSystem;
 
     /**
      * Set up fixture test folders and files
      *
      * @throws \Exception
-     * @return void
      */
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         static::$fileSystem = FileSystem::factory('vfs://');
         static::$fileSystem->mount();
@@ -34,15 +42,12 @@ class EnumeratorTest extends \PHPUnit_Framework_TestCase
         }
     }
 
-    public static function tearDownAfterClass()
+    public static function tearDownAfterClass(): void
     {
         static::$fileSystem->unmount();
     }
 
-    /**
-     * @return array
-     */
-    public function pathsProvider()
+    public static function pathsProvider(): array
     {
         return [
             [
@@ -87,30 +92,27 @@ class EnumeratorTest extends \PHPUnit_Framework_TestCase
     /**
      * Test wildcard path matching for Enumerator.
      *
-     * @dataProvider pathsProvider
      *
-     * @param array $expectedPaths
-     * @param array $includePaths
-     * @param array $excludePaths
      * @throws \InvalidArgumentException
      * @throws \LogicException
      * @throws \UnexpectedValueException
      */
-    public function testExclude($expectedPaths, $includePaths, $excludePaths)
+    #[\PHPUnit\Framework\Attributes\DataProvider('pathsProvider')]
+    public function testExclude(array $expectedPaths, array $includePaths, array $excludePaths): void
     {
         $testPaths = [];
 
         /** @var Enumerator $mock */
         $mock = $this->getMockBuilder(Enumerator::class)
             ->setConstructorArgs(['vfs://base', $includePaths, $excludePaths])
-            ->setMethods(['getFileFullPath'])
+            ->onlyMethods(['getFileFullPath'])
             ->getMock();
 
         // Mock getFileRealPath method to provide a pathname
         // VFS does not support getRealPath()
         $mock->expects($this->any())
             ->method('getFileFullPath')
-            ->will($this->returnCallback(function (\SplFileInfo $file) {
+            ->will($this->returnCallback(function (SplFileInfo $file) {
                 return $file->getPathname();
             }));
 

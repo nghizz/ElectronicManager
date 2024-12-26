@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -12,60 +14,52 @@ namespace Go\Aop\Framework;
 
 use Go\Core\AspectContainer;
 
-class ReflectionConstructorInvocationTest extends AbstractInterceptorTest
+class ReflectionConstructorInvocationTest extends AbstractInterceptorTestCase
 {
-    public function testCanCreateObjectDuringInvocation()
+    public function testCanCreateObjectDuringInvocation(): void
     {
-        $invocation = new ReflectionConstructorInvocation(\Exception::class, 'unused', []);
+        $invocation = new ReflectionConstructorInvocation([], \Exception::class);
         $result     = $invocation->__invoke();
         $this->assertInstanceOf(\Exception::class, $result);
     }
 
-    public function testKnowsAboutSpecialClassSuffix()
-    {
-        $specialName = \Exception::class . AspectContainer::AOP_PROXIED_SUFFIX;
-        $invocation  = new ReflectionConstructorInvocation($specialName, 'unused', []);
-        $result      = $invocation->__invoke();
-        $this->assertInstanceOf(\Exception::class, $result);
-    }
-
-    public function testCanExecuteAdvicesDuringConstruct()
+    public function testCanExecuteAdvicesDuringConstruct(): void
     {
         $sequence   = [];
         $advice     = $this->getAdvice($sequence);
         $before     = new BeforeInterceptor($advice);
-        $invocation = new ReflectionConstructorInvocation(\Exception::class, 'unused', [$before]);
+        $invocation = new ReflectionConstructorInvocation([$before], \Exception::class);
         $this->assertEmpty($sequence);
         $invocation->__invoke(['Message', 100]);
         $this->assertContains('advice', $sequence);
     }
 
-    public function testStringRepresentation()
+    public function testStringRepresentation(): void
     {
-        $invocation = new ReflectionConstructorInvocation(\Exception::class, 'unused', []);
+        $invocation = new ReflectionConstructorInvocation([], \Exception::class);
         $name       = (string)$invocation;
 
         $this->assertEquals('initialization(Exception)', $name);
     }
 
-    public function testReturnsConstructor()
+    public function testReturnsConstructor(): void
     {
-        $invocation = new ReflectionConstructorInvocation(\Exception::class, 'unused', []);
+        $invocation = new ReflectionConstructorInvocation([], \Exception::class);
         $ctor       = $invocation->getConstructor();
         $this->assertInstanceOf(\ReflectionMethod::class, $ctor);
         $this->assertEquals('__construct', $ctor->name);
     }
 
-    public function testReturnsThis()
+    public function testReturnsThis(): void
     {
-        $invocation = new ReflectionConstructorInvocation(\Exception::class, 'unused', []);
+        $invocation = new ReflectionConstructorInvocation([], \Exception::class);
         $instance   = $invocation->getThis();
         $this->assertNull($instance);
         $object = $invocation->__invoke(['Some error', 100]);
         $this->assertEquals($object, $invocation->getThis());
     }
 
-    public function testCanCreateAnInstanceEvenWithNonPublicConstructor()
+    public function testCanCreateAnInstanceEvenWithNonPublicConstructor(): void
     {
         try {
             $testClassInstance = new class('Test') {
@@ -88,7 +82,7 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTest
             }
         }
         $testClassName = $loadedClass;
-        $invocation    = new ReflectionConstructorInvocation($testClassName, 'unused', []);
+        $invocation    = new ReflectionConstructorInvocation([], $testClassName);
         $result        = $invocation->__invoke(['Hello']);
         $this->assertInstanceOf($testClassName, $result);
         $this->assertSame('Hello', $result->message);

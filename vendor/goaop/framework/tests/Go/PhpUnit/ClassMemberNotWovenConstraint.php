@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -10,31 +12,28 @@
 
 namespace Go\PhpUnit;
 
-use PHPUnit_Framework_Constraint as Constraint;
+use InvalidArgumentException;
+use PHPUnit\Framework\Constraint\Constraint;
 
 /**
  *Asserts that class member is not woven for given class.
  */
 final class ClassMemberNotWovenConstraint extends Constraint
 {
-    /**
-     * @var array
-     */
-    private $configuration;
+    private array $configuration;
 
     public function __construct(array $configuration)
     {
-        parent::__construct();
         $this->configuration = $configuration;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function matches($other)
+    public function matches($other): bool
     {
         if (!$other instanceof ClassAdvisorIdentifier) {
-            throw new \InvalidArgumentException(sprintf('Expected instance of "%s", got "%s".', ClassAdvisorIdentifier::class, is_object($other) ? get_class($other) : gettype($other)));
+            throw new InvalidArgumentException(sprintf('Expected instance of "%s", got "%s".', ClassAdvisorIdentifier::class, is_object($other) ? get_class($other) : gettype($other)));
         }
 
         $reflectionClass         = ProxyClassReflectionHelper::createReflectionClass($other->getClass(), $this->configuration);
@@ -63,7 +62,7 @@ final class ClassMemberNotWovenConstraint extends Constraint
     /**
      * {@inheritdoc}
      */
-    public function toString()
+    public function toString(): string
     {
         return 'class member not woven.';
     }

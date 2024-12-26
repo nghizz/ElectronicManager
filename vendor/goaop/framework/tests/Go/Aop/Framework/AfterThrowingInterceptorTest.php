@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -10,9 +12,11 @@
 
 namespace Go\Aop\Framework;
 
-class AfterThrowingInterceptorTest extends AbstractInterceptorTest
-{
 
+use RuntimeException;
+
+class AfterThrowingInterceptorTest extends AbstractInterceptorTestCase
+{
     public function testAdviceIsNotCalledAfterInvocation()
     {
         $sequence   = [];
@@ -33,7 +37,7 @@ class AfterThrowingInterceptorTest extends AbstractInterceptorTest
         $invocation = $this->getInvocation($sequence, true);
 
         $interceptor = new AfterThrowingInterceptor($advice);
-        $this->setExpectedException('RuntimeException');
+        $this->expectException(RuntimeException::class);
         try {
             $interceptor->invoke($invocation);
         } catch (\Exception $e) {

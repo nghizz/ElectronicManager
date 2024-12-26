@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -12,24 +14,18 @@ namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\FunctionInvocation;
-use Go\Lang\Annotation\Around;
+use Go\Lang\Attribute\Around;
 
 /**
  * Function interceptor can intercept an access to the system functions
  */
 class FunctionInterceptorAspect implements Aspect
 {
-
     /**
      * This advice intercepts an access to the array_*** function in Demo\Example\ namespace
-     *
-     * @param FunctionInvocation $invocation
-     *
-     * @Around("execution(Demo\Example\array_*(*))")
-     *
-     * @return mixed
      */
-    public function aroundArrayFunctions(FunctionInvocation $invocation)
+    #[Around('execution(Demo\Example\array_*(*))')]
+    public function aroundArrayFunctions(FunctionInvocation $invocation): mixed
     {
         echo 'Calling Around Interceptor for ',
             $invocation,
@@ -42,14 +38,9 @@ class FunctionInterceptorAspect implements Aspect
 
     /**
      * This advice intercepts an access to the file_get_contents() function
-     *
-     * @param FunctionInvocation $invocation
-     *
-     * @Around("execution(Demo\Example\file_get_contents(*))")
-     *
-     * @return mixed
      */
-    public function aroundFileGetContents(FunctionInvocation $invocation)
+    #[Around('execution(Demo\Example\file_get_contents(*))')]
+    public function aroundFileGetContents(FunctionInvocation $invocation): string
     {
         echo 'Calling Around Interceptor for ',
             $invocation,

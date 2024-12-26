@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -10,31 +12,31 @@
 
 namespace Go\Core;
 
+use AllowDynamicProperties;
 use Go\Aop\Advice;
 use Go\Aop\Advisor;
+use Go\Aop\Aspect;
+use Go\Aop\AspectException;
+use InvalidArgumentException;
 
 /**
  * Provides an interface for loading of advisors from the container
  */
+#[AllowDynamicProperties]
 class LazyAdvisorAccessor
 {
     /**
-     * @var AspectContainer|Container
+     * Instance of aspect container
      */
-    protected $container;
+    protected AspectContainer $container;
 
     /**
      * Aspect loader instance
-     *
-     * @var AspectLoader
      */
-    protected $loader;
+    protected AspectLoader $loader;
 
     /**
      * Accessor constructor
-     *
-     * @param AspectContainer $container
-     * @param AspectLoader $loader
      */
     public function __construct(AspectContainer $container, AspectLoader $loader)
     {
@@ -43,28 +45,24 @@ class LazyAdvisorAccessor
     }
 
     /**
-     * Magic accessor
+     * Magic advice accessor
      *
-     * @param string $name Key name
-     *
-     * @throws \InvalidArgumentException if referenced value is not an advisor
-     * @return Advice
+     * @throws InvalidArgumentException if referenced value is not an advisor
      */
-    public function __get($name)
+    public function __get(string $name): Advice
     {
-        if ($this->container->has($name)) {
-            $advisor = $this->container->get($name);
-        } else {
-            list(, $advisorName) = explode('.', $name);
-            list($aspect)        = explode('->', $advisorName);
-            $aspectInstance      = $this->container->getAspect($aspect);
+        if (!$this->container->has($name)) {
+            [$aspectName] = explode('->', $name, 2);
+            if (!is_subclass_of($aspectName, Aspect::class)) {
+                throw new AspectException("{$aspectName} is not a valid aspect class");
+            }
+            $aspectInstance = $this->container->getService($aspectName);
             $this->loader->loadAndRegister($aspectInstance);
 
-            $advisor = $this->container->get($name);
         }
-
+        $advisor = $this->container->getValue($name);
         if (!$advisor instanceof Advisor) {
-            throw new \InvalidArgumentException("Reference {$name} is not an advisor");
+            throw new InvalidArgumentException("Reference {$name} is not an advisor");
         }
         $this->$name = $advisor->getAdvice();
 

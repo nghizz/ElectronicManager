@@ -4,18 +4,15 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitcf4aab91107fe6d707ed6076950b170a
+class ComposerStaticInit4593db9879d953d167eb40894aae7a6a
 {
     public static $files = array (
-        '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
-        'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
         '950e8c5ec01dc90f029c243f73011631' => __DIR__ . '/..' . '/goaop/parser-reflection/src/bootstrap.php',
     );
 
     public static $prefixLengthsPsr4 = array (
         'S' => 
         array (
-            'Symfony\\Polyfill\\Php80\\' => 23,
             'Symfony\\Component\\Finder\\' => 25,
         ),
         'P' => 
@@ -29,6 +26,10 @@ class ComposerStaticInitcf4aab91107fe6d707ed6076950b170a
         array (
             'Monolog\\' => 8,
         ),
+        'L' => 
+        array (
+            'Laminas\\Code\\' => 13,
+        ),
         'G' => 
         array (
             'Go\\ParserReflection\\' => 20,
@@ -38,8 +39,8 @@ class ComposerStaticInitcf4aab91107fe6d707ed6076950b170a
         array (
             'Doctrine\\Deprecations\\' => 22,
             'Doctrine\\Common\\Lexer\\' => 22,
-            'Doctrine\\Common\\Cache\\' => 22,
             'Doctrine\\Common\\Annotations\\' => 28,
+            'Dissect\\' => 8,
         ),
         'A' => 
         array (
@@ -48,10 +49,6 @@ class ComposerStaticInitcf4aab91107fe6d707ed6076950b170a
     );
 
     public static $prefixDirsPsr4 = array (
-        'Symfony\\Polyfill\\Php80\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/symfony/polyfill-php80',
-        ),
         'Symfony\\Component\\Finder\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/finder',
@@ -76,6 +73,10 @@ class ComposerStaticInitcf4aab91107fe6d707ed6076950b170a
         array (
             0 => __DIR__ . '/..' . '/monolog/monolog/src/Monolog',
         ),
+        'Laminas\\Code\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/laminas/laminas-code/src',
+        ),
         'Go\\ParserReflection\\' => 
         array (
             0 => __DIR__ . '/..' . '/goaop/parser-reflection/src',
@@ -92,13 +93,13 @@ class ComposerStaticInitcf4aab91107fe6d707ed6076950b170a
         array (
             0 => __DIR__ . '/..' . '/doctrine/lexer/src',
         ),
-        'Doctrine\\Common\\Cache\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/doctrine/cache/lib/Doctrine/Common/Cache',
-        ),
         'Doctrine\\Common\\Annotations\\' => 
         array (
             0 => __DIR__ . '/..' . '/doctrine/annotations/lib/Doctrine/Common/Annotations',
+        ),
+        'Dissect\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/goaop/dissect/src',
         ),
         'App\\' => 
         array (
@@ -106,32 +107,16 @@ class ComposerStaticInitcf4aab91107fe6d707ed6076950b170a
         ),
     );
 
-    public static $prefixesPsr0 = array (
-        'D' => 
-        array (
-            'Dissect' => 
-            array (
-                0 => __DIR__ . '/..' . '/jakubledl/dissect/src',
-            ),
-        ),
-    );
-
     public static $classMap = array (
-        'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
-        'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
-        'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
-        'UnhandledMatchError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/UnhandledMatchError.php',
-        'ValueError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/ValueError.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitcf4aab91107fe6d707ed6076950b170a::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitcf4aab91107fe6d707ed6076950b170a::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitcf4aab91107fe6d707ed6076950b170a::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInitcf4aab91107fe6d707ed6076950b170a::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit4593db9879d953d167eb40894aae7a6a::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit4593db9879d953d167eb40894aae7a6a::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit4593db9879d953d167eb40894aae7a6a::$classMap;
 
         }, null, ClassLoader::class);
     }

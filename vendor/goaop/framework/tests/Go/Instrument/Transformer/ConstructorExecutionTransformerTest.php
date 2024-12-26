@@ -1,28 +1,33 @@
 <?php
 
+declare(strict_types = 1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
 namespace Go\Instrument\Transformer;
 
-class ConstructorExecutionTransformerTest extends \PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+
+class ConstructorExecutionTransformerTest extends TestCase
 {
-    /**
-     * @var ConstructorExecutionTransformer
-     */
-    protected static $transformer;
+    protected static ConstructorExecutionTransformer $transformer;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function setUp()
+    public static function setUpBeforeClass(): void
     {
-        if (!self::$transformer) {
-            self::$transformer = new ConstructorExecutionTransformer();
-        }
+        self::$transformer = new ConstructorExecutionTransformer();
     }
 
-    /**
-     * @dataProvider listOfExpressions
-     */
-    public function testCanTransformNewExpressions($source, $expected)
+    #[\PHPUnit\Framework\Attributes\DataProvider('listOfExpressions')]
+    public function testCanTransformNewExpressions($source, $expected): void
     {
         $stream   = fopen('php://input', 'r');
         $metadata = new StreamMetaData($stream, "<?php $source; ?>");
@@ -33,7 +38,7 @@ class ConstructorExecutionTransformerTest extends \PHPUnit_Framework_TestCase
         fclose($stream);
     }
 
-    public function listOfExpressions()
+    public static function listOfExpressions(): array
     {
         return [
             [

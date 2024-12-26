@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -24,9 +26,9 @@ class DynamicMethodsDemo
      * Magic invoker
      *
      * @param string $name Method name
-     * @param array $args Method arguments
+     * @param array  $args Method arguments
      */
-    public function __call($name, array $args)
+    public function __call(string $name, array $args): void
     {
         echo "I'm method: {$name}", PHP_EOL;
     }
@@ -35,9 +37,9 @@ class DynamicMethodsDemo
      * Magic static invoker
      *
      * @param string $name Method name
-     * @param array $args Method arguments
+     * @param array  $args Method arguments
      */
-    public static function __callStatic($name, array $args)
+    public static function __callStatic(string $name, array $args): void
     {
         echo "I'm static method: {$name}", PHP_EOL;
     }

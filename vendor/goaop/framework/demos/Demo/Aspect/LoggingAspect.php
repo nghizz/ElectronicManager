@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -12,7 +14,7 @@ namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation\Before;
+use Go\Lang\Attribute\Before;
 
 /**
  * Logging aspect
@@ -21,7 +23,6 @@ use Go\Lang\Annotation\Before;
  */
 class LoggingAspect implements Aspect
 {
-
     /**
      * This advice intercepts an execution of loggable methods
      *
@@ -31,12 +32,9 @@ class LoggingAspect implements Aspect
      * Also you can choose "After" or "Around" advice to access an return value from method.
      *
      * To inject logger into this aspect you can look at Warlock framework with DI+AOP
-     *
-     * @param MethodInvocation $invocation Invocation
-     *
-     * @Before("@execution(Demo\Annotation\Loggable)")
      */
-    public function beforeMethodExecution(MethodInvocation $invocation)
+    #[Before("@execution(Demo\Attribute\Loggable)")]
+    public function beforeMethodExecution(MethodInvocation $invocation): void
     {
         echo 'Calling Before Interceptor for ',
              $invocation,

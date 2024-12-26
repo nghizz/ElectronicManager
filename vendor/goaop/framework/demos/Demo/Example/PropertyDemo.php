@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -10,32 +12,42 @@
 
 namespace Demo\Example;
 
+use RuntimeException;
+
 /**
  * Example class to show how to intercept an access to the properties
  */
 class PropertyDemo
 {
-    public $publicProperty = 123;
+    public int $publicProperty = 123;
 
-    protected $protectedProperty = 456;
+    protected int $protectedProperty = 456;
 
-    protected $indirectModificationCheck = [4, 5, 6];
+    private string $privateProperty = 'test';
 
-    public function showProtected()
+    protected array $indirectModificationCheck = [4, 5, 6];
+
+    public function showProtected(): void
     {
         echo $this->protectedProperty, PHP_EOL;
     }
 
-    public function setProtected($newValue)
+    public function setProtected(int $newValue): void
     {
         $this->protectedProperty = $newValue;
+    }
+
+    public function showPrivate(): void
+    {
+        echo $this->privateProperty;
     }
 
     public function __construct()
     {
         array_push($this->indirectModificationCheck, 7, 8, 9);
         if (count($this->indirectModificationCheck) !== 6) {
-            throw new \RuntimeException("Indirect modification doesn't work!");
+            throw new RuntimeException("Indirect modification doesn't work!");
         }
+        $this->privateProperty = $this->privateProperty . 'bar';
     }
 }

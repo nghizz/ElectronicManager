@@ -1,14 +1,25 @@
 <?php
 
+declare(strict_types = 1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
 namespace Go\Instrument;
 
-class PathResolverTest extends \PHPUnit_Framework_TestCase
-{
+use PHPUnit\Framework\TestCase;
 
+class PathResolverTest extends TestCase
+{
     /**
      * Test existence checking
      */
-    public function testCanResolveAndCheckExistence()
+    public function testCanResolveAndCheckExistence(): void
     {
         $this->assertEquals(__DIR__, PathResolver::realpath(__DIR__, true));
         $this->assertEquals(false, PathResolver::realpath(__DIR__ . '/bad/dir', true));
@@ -17,24 +28,20 @@ class PathResolverTest extends \PHPUnit_Framework_TestCase
     /**
      * Test multiple resolve
      */
-    public function testCanResolveArray()
+    public function testCanResolveArray(): void
     {
         $this->assertEquals([__DIR__ , __FILE__], PathResolver::realpath([__DIR__ , __FILE__]));
     }
 
     /**
      * Test for checking the logic of custom realpath() implementation
-     *
-     * @param string $path Given path
-     * @param string $expected Expected path
-     *
-     * @dataProvider realpathExamples
      */
-    public function testRealpathWorkingCorrectly($path, $expected)
+    #[\PHPUnit\Framework\Attributes\DataProvider('realpathExamples')]
+    public function testRealpathWorkingCorrectly(string $path, string $expected): void
     {
         // Trick to get scheme name and path in one action. If no scheme, then there will be only one part
         $components = explode('://', $expected, 2);
-        list ($pathScheme, $localPath) = isset($components[1]) ? $components : [null, $components[0]];
+        [$pathScheme, $localPath] = isset($components[1]) ? $components : [null, $components[0]];
 
         // resolve path parts (single dot, double dot and double delimiters)
         $localPath  = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $localPath);
@@ -51,10 +58,14 @@ class PathResolverTest extends \PHPUnit_Framework_TestCase
      *
      * @return array
      */
-    public function realpathExamples()
+    public static function realpathExamples(): array
     {
         $curDir = getcwd();
         $parent = dirname($curDir);
+        // If we use top-level directory in Docker, then dirname will be '/' and result will be incorrect
+        if ($parent === '/') {
+            $parent = '';
+        }
 
         return [
             ['/some/absolute/file' , '/some/absolute/file'],

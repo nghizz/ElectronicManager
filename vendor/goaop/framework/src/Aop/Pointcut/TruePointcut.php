@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -11,53 +13,37 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
+use Go\ParserReflection\ReflectionFileNamespace;
+use ReflectionClass;
+use ReflectionFunction;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * Canonical Pointcut instance that always matches.
  */
-class TruePointcut implements Pointcut
+final readonly class TruePointcut implements Pointcut
 {
-    use PointcutClassFilterTrait;
+    /**
+     * Default constructor can be used to specify concrete pointcut kind
+     */
+    public function __construct(private int $pointcutKind = self::KIND_ALL) {}
 
     /**
-     * Filter kind
-     *
-     * @var int
+     * @inheritdoc
+     * @return true Covariant, always true for TruePointcut
      */
-    protected $filterKind = 0;
-
-    /**
-     * Default constructor can be used to specify concrete filter kind
-     *
-     * @param int $filterKind Kind of filter, e.g. KIND_METHOD
-     */
-    public function __construct($filterKind = self::KIND_ALL)
-    {
-        $this->filterKind = $filterKind;
-    }
-
-    /**
-     * Performs matching of point of code
-     *
-     * @param mixed $point Specific part of code, can be any Reflection class
-     * @param null|mixed $context Related context, can be class or namespace
-     * @param null|string|object $instance Invocation instance or string for static calls
-     * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
-     */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
-    {
+    public function matches(
+        ReflectionClass|ReflectionFileNamespace                $context,
+        ReflectionMethod|ReflectionProperty|ReflectionFunction $reflector = null,
+        object|string                                          $instanceOrScope = null,
+        array                                                  $arguments = null
+    ): true {
         return true;
     }
 
-    /**
-     * Returns the kind of point filter
-     *
-     * @return integer
-     */
-    public function getKind()
+    public function getKind(): int
     {
-        return $this->filterKind;
+        return $this->pointcutKind;
     }
 }

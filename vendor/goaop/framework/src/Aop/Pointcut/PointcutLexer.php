@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -15,9 +17,8 @@ use Dissect\Lexer\SimpleLexer;
 /**
  * This class defines a lexer for pointcut expression
  */
-class PointcutLexer extends SimpleLexer
+final class PointcutLexer extends SimpleLexer
 {
-
     /**
      * Lexer token definitions
      */
@@ -28,7 +29,6 @@ class PointcutLexer extends SimpleLexer
         $this->token('dynamic');
         $this->token('within');
         $this->token('access');
-        $this->token('cflowbelow');
         $this->token('initialization');
         $this->token('staticinitialization');
         $this->token('matchInherited');

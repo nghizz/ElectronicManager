@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -12,105 +14,82 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\AspectException;
 use Go\Aop\Intercept\FieldAccess;
+use Go\Aop\Intercept\FieldAccessType;
+use Go\Aop\Intercept\Interceptor;
 use ReflectionProperty;
 
 /**
  * Represents a field access joinpoint
  */
-class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
+final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 {
+    /**
+     * Stack frames to work with recursive calls or with cross-calls inside object
+     *
+     * @phpstan-var array<int, array{object, FieldAccessType, mixed, mixed}>>
+     */
+    private array $stackFrames = [];
 
     /**
      * Instance of object for accessing
-     *
-     * @var object
      */
-    protected $instance;
+    private object $instance;
 
     /**
      * Instance of reflection property
-     *
-     * @var ReflectionProperty
      */
-    protected $reflectionProperty;
+    private readonly ReflectionProperty $reflectionProperty;
 
     /**
      * New value to set
-     *
-     * @var mixed
      */
-    protected $newValue;
+    private mixed $newValue;
 
     /**
      * Access type for field access
-     *
-     * @var integer
      */
-    private $accessType;
+    private FieldAccessType $accessType;
 
     /**
      * Copy of the original value of property
-     *
-     * @var mixed
      */
-    private $value;
+    private mixed $value;
 
     /**
      * Constructor for field access
      *
-     * @param string $className Class name
-     * @param string $fieldName Field name
-     * @param $advices array List of advices for this invocation
+     * @param array<Interceptor> $advices List of advices for this invocation
+     * @param (string&class-string) $className
      */
-    public function __construct($className, $fieldName, array $advices)
+    public function __construct(array $advices, string $className, string $fieldName)
     {
         parent::__construct($advices);
-
-        $this->reflectionProperty = $reflectionProperty = new ReflectionProperty($className, $fieldName);
-        // Give an access to protected field
-        if ($reflectionProperty->isProtected()) {
-            $reflectionProperty->setAccessible(true);
+        // We should bind our interceptor to the parent class where property is usually declared
+        $parentClass = get_parent_class($className);
+        if ($parentClass !== false && property_exists($parentClass, $fieldName)) {
+            $className = $parentClass;
         }
+        $this->reflectionProperty = new ReflectionProperty($className, $fieldName);
     }
 
-    /**
-     * Returns the access type.
-     *
-     * @return integer
-     */
-    public function getAccessType()
+    public function getAccessType(): FieldAccessType
     {
         return $this->accessType;
     }
 
-    /**
-     * Gets the field being accessed.
-     *
-     * @return ReflectionProperty the field being accessed.
-     */
-    public function getField()
+    public function getField(): ReflectionProperty
     {
         return $this->reflectionProperty;
     }
 
-    /**
-     * Gets the current value of property
-     *
-     * @return mixed
-     */
-    public function &getValue()
+    public function &getValue(): mixed
     {
         $value = &$this->value;
 
         return $value;
     }
 
-    /**
-     * Gets the value that must be set to the field.
-     *
-     * @return mixed
-     */
-    public function &getValueToSet()
+    public function &getValueToSet(): mixed
     {
         $newValue = &$this->newValue;
 
@@ -120,38 +99,37 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Checks scope rules for accessing property
      *
-     * @param int $stackLevel Stack level for check
-     *
-     * @return true if access is OK
+     * @internal
      */
-    public function ensureScopeRule($stackLevel = 2)
+    public function ensureScopeRule(int $stackLevel = 2): void
     {
-        $property = $this->reflectionProperty;
-
-        if ($property->isProtected()) {
-            $backTrace     = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $stackLevel+1);
-            $accessor      = isset($backTrace[$stackLevel]) ? $backTrace[$stackLevel] : [];
+        $property    = $this->reflectionProperty;
+        $isProtected = $property->isProtected();
+        $isPrivate   = $property->isPrivate();
+        if ($isProtected || $isPrivate) {
+            $backTrace     = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $stackLevel + 1);
+            $accessor      = $backTrace[$stackLevel] ?? [];
             $propertyClass = $property->class;
             if (isset($accessor['class'])) {
-                if ($accessor['class'] === $propertyClass || is_subclass_of($accessor['class'], $propertyClass)) {
-                    return true;
+                // For private and protected properties its ok to access from the same class
+                if ($accessor['class'] === $propertyClass) {
+                    return;
+                }
+                // For protected properties its ok to access from any subclass
+                if ($isProtected && is_subclass_of($accessor['class'], $propertyClass)) {
+                    return;
                 }
             }
-            throw new AspectException("Cannot access protected property {$propertyClass}::{$property->name}");
+            throw new AspectException("Cannot access property {$propertyClass}::{$property->name}");
         }
-
-        return true;
     }
 
     /**
-     * Proceed to the next interceptor in the Chain
+     * @inheritdoc
      *
-     * Typically this method is called inside previous closure, as instance of Joinpoint is passed to callback
-     * Do not call this method directly, only inside callback closures.
-     *
-     * @return void For field interceptor there is no return values
+     * @return void Covariant, as for field interceptor there is no return value
      */
-    final public function proceed()
+    final public function proceed(): void
     {
         if (isset($this->advices[$this->current])) {
             $currentInterceptor = $this->advices[$this->current++];
@@ -163,79 +141,75 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Invokes current field access with all interceptors
      *
-     * @param object $instance Instance of object
-     * @param integer $accessType Type of access: READ or WRITE
-     * @param mixed $originalValue Original value of property
-     * @param mixed $newValue New value to set
+     * @param mixed $originalValue Original value of property, passed by reference
      *
      * @return mixed
      */
-    final public function &__invoke($instance, $accessType, &$originalValue, $newValue = NAN)
+    final public function &__invoke(object $instance, FieldAccessType $accessType, mixed &$originalValue, mixed $newValue = NAN): mixed
     {
-        if ($this->level) {
+        if ($this->level > 0) {
             $this->stackFrames[] = [$this->instance, $this->accessType, &$this->value, &$this->newValue];
         }
 
-        ++$this->level;
+        try {
+            ++$this->level;
 
-        $this->current    = 0;
-        $this->instance   = $instance;
-        $this->accessType = $accessType;
-        $this->value      = &$originalValue;
-        $this->newValue   = $newValue;
+            $this->current    = 0;
+            $this->instance   = $instance;
+            $this->accessType = $accessType;
+            $this->value      = &$originalValue;
+            $this->newValue   = $newValue;
 
-        $this->proceed();
+            $this->proceed();
 
-        --$this->level;
+            if ($accessType === FieldAccessType::READ) {
+                $result = &$this->value;
+            } else {
+                $result = &$this->newValue;
+            }
 
-        if ($this->level) {
-            list($this->instance, $this->accessType, $this->value, $this->newValue) = array_pop($this->stackFrames);
+            return $result;
+        } finally {
+            --$this->level;
+
+            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
+                [$this->instance, $this->accessType, $this->value, $this->newValue] = $stackFrame;
+            }
         }
-
-        if ($accessType === self::READ) {
-            $result = &$this->value;
-        } else {
-            $result = &$this->newValue;
-        }
-
-        return $result;
-
     }
 
     /**
-     * Returns the object that holds the current joinpoint's static
-     * part.
+     * @inheritdoc
      *
-     * @return object|null the object (can be null if the accessible object is
-     * static).
+     * @return object Covariant, always instance of object, can not be null
      */
-    final public function getThis()
+    final public function getThis(): object
     {
         return $this->instance;
     }
 
     /**
-     * Returns the static part of this joinpoint.
-     *
-     * @return object
+     * @return true Covariance, always true for class properties
      */
-    final public function getStaticPart()
+    final public function isDynamic(): true
     {
-        return $this->getField();
+        return true;
+    }
+
+    final public function getScope(): string
+    {
+        return $this->instance::class;
     }
 
     /**
      * Returns a friendly description of current joinpoint
-     *
-     * @return string
      */
-    final public function __toString()
+    final public function __toString(): string
     {
         return sprintf(
-            '%s(%s%s%s)',
-            $this->accessType === self::READ ? 'get' : 'set',
-            is_object($this->instance) ? get_class($this->instance) : $this->instance,
-            $this->reflectionProperty->isStatic() ? '::' : '->',
+            '%s(%s->%s)',
+            $this->accessType->value,
+            $this->getScope(),
             $this->reflectionProperty->name
         );
     }

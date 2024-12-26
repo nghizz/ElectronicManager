@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -12,7 +14,8 @@ namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\FieldAccess;
-use Go\Lang\Annotation\Around;
+use Go\Aop\Intercept\FieldAccessType;
+use Go\Lang\Attribute\Around;
 
 /**
  * Property interceptor can intercept an access to the public and protected properties
@@ -21,18 +24,13 @@ use Go\Lang\Annotation\Around;
  */
 class PropertyInterceptorAspect implements Aspect
 {
-
     /**
      * Advice that controls an access to the properties
-     *
-     * @param FieldAccess $fieldAccess Joinpoint
-     *
-     * @Around("access(public|protected Demo\Example\PropertyDemo->*)")
-     * @return mixed
      */
-    public function aroundFieldAccess(FieldAccess $fieldAccess)
+    #[Around("access(public|protected|private Demo\Example\PropertyDemo->*)")]
+    public function aroundFieldAccess(FieldAccess $fieldAccess): void
     {
-        $isRead = $fieldAccess->getAccessType() == FieldAccess::READ;
+        $isRead = $fieldAccess->getAccessType() === FieldAccessType::READ;
         // proceed all internal advices
         $fieldAccess->proceed();
 

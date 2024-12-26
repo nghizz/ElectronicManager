@@ -1,22 +1,25 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace Go\Aop\Framework;
 
 use Go\Aop\AdviceAfter;
 use Go\Aop\AdviceAround;
 use Go\Aop\AdviceBefore;
+use Go\Aop\OrderedAdvice;
+use PHPUnit\Framework\TestCase;
 
-class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
+class AbstractJoinpointTest extends TestCase
 {
-    /**
-     * @var AbstractJoinpoint
-     */
-    protected $joinpoint;
+    protected AbstractJoinpoint $joinpoint;
 
     /**
-     * @dataProvider sortingTestSource
+     * @param array $advices
+     * @param array $order
      */
-    public function testSortingLogic($advices, array $order = [])
+    #[\PHPUnit\Framework\Attributes\DataProvider('sortingTestSource')]
+    public function testSortingLogic(array $advices, array $order = []): void
     {
         $advices = AbstractJoinpoint::sortAdvices($advices);
         foreach ($advices as $advice) {
@@ -25,7 +28,7 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
         }
     }
 
-    public function sortingTestSource()
+    public function sortingTestSource(): array
     {
         return [
             // #0
@@ -112,8 +115,8 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
             // #7
             [
                 [
-                    $forth = $this->getOrderedAdvice(4, 'ForthAdvice'),
-                    $first = $this->getOrderedAdvice(1, 'FirstAdvice')
+                    $forth = $this->getOrderedAdvice(4),
+                    $first = $this->getOrderedAdvice(1)
                 ],
                 [
                     get_class($first),
@@ -125,20 +128,13 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
 
     /**
      * Returns the ordered advice
-     *
-     * @param int $order Order
-     * @param string $name Mock class name
-     * @return \PHPUnit_Framework_MockObject_MockObject|OrderedAdvice
      */
-    private function getOrderedAdvice($order, $name)
+    private function getOrderedAdvice(int $order): OrderedAdvice
     {
-        $mock = $this->createMock(OrderedAdvice::class, [], [], $name);
+        $mock = $this->createMock(OrderedAdvice::class);
         $mock
-            ->expects($this->any())
             ->method('getAdviceOrder')
-            ->will(
-                $this->returnValue($order)
-            );
+            ->willReturn($order);
 
         return $mock;
     }

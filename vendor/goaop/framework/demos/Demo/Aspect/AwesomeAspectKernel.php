@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -10,8 +12,8 @@
 
 namespace Demo\Aspect;
 
-use Go\Core\AspectKernel;
 use Go\Core\AspectContainer;
+use Go\Core\AspectKernel;
 
 /**
  * Awesome Aspect Kernel class
@@ -20,12 +22,8 @@ class AwesomeAspectKernel extends AspectKernel
 {
     /**
      * Configure an AspectContainer with advisors, aspects and pointcuts
-     *
-     * @param AspectContainer $container
-     *
-     * @return void
      */
-    protected function configureAop(AspectContainer $container)
+    protected function configureAop(AspectContainer $container): void
     {
         $container->registerAspect(new DeclareErrorAspect());
         $container->registerAspect(new CachingAspect());

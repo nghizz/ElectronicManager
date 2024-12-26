@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -11,88 +13,62 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
-use Go\Aop\Support\AndPointFilter;
+use Go\ParserReflection\ReflectionFileNamespace;
+use ReflectionClass;
+use ReflectionFunction;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
- * Signature method pointcut checks method signature (modifiers and name) to match it
+ * Logical "and" pointcut filter.
  */
-class AndPointcut implements Pointcut
+final readonly class AndPointcut implements Pointcut
 {
-
-    use PointcutClassFilterTrait;
-
     /**
-     * @var Pointcut
+     * Kind of pointcut
      */
-    protected $first;
+    private int $pointcutKind;
 
     /**
-     * @var Pointcut
-     */
-    protected $second;
-
-    /**
-     * Returns pointcut kind
+     * List of Pointcut to combine with "AND"
      *
-     * @var int
+     * @var array<Pointcut>
      */
-    protected $kind = 0;
+    private array $pointcuts;
 
     /**
-     * Signature method matcher constructor
-     *
-     * @param Pointcut $first First filter
-     * @param Pointcut $second Second filter
+     * And constructor
      */
-    public function __construct(Pointcut $first, Pointcut $second)
+    public function __construct(int $pointcutKind = null, Pointcut ...$pointcuts)
     {
-        $this->first  = $first;
-        $this->second = $second;
-        $this->kind   = $first->getKind() & $second->getKind();
-
-        $this->classFilter = new AndPointFilter($first->getClassFilter(), $second->getClassFilter());
+        // If we don't have specified kind, it will be calculated as intersection then
+        if (!isset($pointcutKind)) {
+            $pointcutKind = -1;
+            foreach ($pointcuts as $singlePointcut) {
+                $pointcutKind &= $singlePointcut->getKind();
+            }
+        }
+        $this->pointcutKind = $pointcutKind;
+        $this->pointcuts    = $pointcuts;
     }
 
-    /**
-     * Performs matching of point of code
-     *
-     * @param mixed $point Specific part of code, can be any Reflection class
-     * @param null|mixed $context Related context, can be class or namespace
-     * @param null|string|object $instance Invocation instance or string for static calls
-     * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
-     */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
-    {
-        return $this->matchPart($this->first, $point, $context, $instance, $arguments)
-            && $this->matchPart($this->second, $point, $context, $instance, $arguments);
+    public function matches(
+        ReflectionClass|ReflectionFileNamespace                $context,
+        ReflectionMethod|ReflectionProperty|ReflectionFunction $reflector = null,
+        object|string                                          $instanceOrScope = null,
+        array                                                  $arguments = null
+    ): bool {
+        foreach ($this->pointcuts as $singlePointcut) {
+            if (!$singlePointcut->matches($context, $reflector, $instanceOrScope, $arguments)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    /**
-     * Returns the kind of point filter
-     *
-     * @return integer
-     */
-    public function getKind()
+    public function getKind(): int
     {
-        return $this->kind;
-    }
-
-    /**
-     * Checks if point filter matches the point
-     *
-     * @param Pointcut $pointcut Pointcut part
-     * @param \ReflectionMethod|\ReflectionProperty $point
-     * @param mixed $context Related context, can be class or namespace
-     * @param object|string|null $instance [Optional] Instance for dynamic matching
-     * @param array $arguments [Optional] Extra arguments for dynamic matching
-     *
-     * @return bool
-     */
-    protected function matchPart(Pointcut $pointcut, $point, $context = null, $instance = null, array $arguments = null)
-    {
-        return $pointcut->matches($point, $context, $instance, $arguments)
-            && $pointcut->getClassFilter()->matches($context);
+        return $this->pointcutKind;
     }
 }

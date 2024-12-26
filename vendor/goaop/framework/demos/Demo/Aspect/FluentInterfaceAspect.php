@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -12,7 +14,7 @@ namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation\Around;
+use Go\Lang\Attribute\Around;
 
 /**
  * Fluent interface aspect provides an easy way to reuse "chain" interface for classes
@@ -27,16 +29,12 @@ class FluentInterfaceAspect implements Aspect
 {
     /**
      * Fluent interface advice
-     *
-     * @Around("within(Demo\Aspect\FluentInterface+) && execution(public **->set*(*))")
-     *
-     * @param MethodInvocation $invocation
-     * @return mixed|null|object
      */
-    protected function aroundMethodExecution(MethodInvocation $invocation)
+    #[Around('within(Demo\Aspect\FluentInterface+) && execution(public **->set*(*))')]
+    protected function aroundMethodExecution(MethodInvocation $invocation): mixed
     {
         $result = $invocation->proceed();
 
-        return $result !== null ? $result : $invocation->getThis();
+        return $result ?? $invocation->getThis();
     }
 }

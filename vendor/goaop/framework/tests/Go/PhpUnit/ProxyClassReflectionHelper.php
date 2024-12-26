@@ -1,8 +1,10 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2017, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -23,7 +25,6 @@ final class ProxyClassReflectionHelper
 {
     private function __construct()
     {
-        // noop
     }
 
     /**
@@ -31,9 +32,8 @@ final class ProxyClassReflectionHelper
      *
      * @param string $className Full qualified class name for which \Go\ParserReflection\ReflectionClass ought to be initialized
      * @param array $configuration Configuration used for Go! AOP project setup
-     * @return \Go\ParserReflection\ReflectionClass
      */
-    public static function createReflectionClass($className, array $configuration)
+    public static function createReflectionClass(string $className, array $configuration): ReflectionClass
     {
         $parsedReflectionClass = new ReflectionClass($className);
         $originalClassFile     = $parsedReflectionClass->getFileName();

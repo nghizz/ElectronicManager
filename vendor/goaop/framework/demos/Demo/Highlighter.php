@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -17,13 +19,10 @@ final class Highlighter
 {
     /**
      * Highlighter with built-in check for list of disabled function (Google AppEngine)
-     *
-     * @param string $file Name of the file
      */
-    public static function highlight($file)
+    public static function highlight(string $file): void
     {
-        $highlightFileFunc = new \ReflectionFunction('highlight_file');
-        if (!$highlightFileFunc->isDisabled()) {
+        if (function_exists('highlight_file')) {
             highlight_file($file);
         } else {
             echo '<pre>' . htmlspecialchars(file_get_contents($file)) . '</pre>';

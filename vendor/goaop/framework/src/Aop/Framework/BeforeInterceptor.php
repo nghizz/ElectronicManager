@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -18,19 +20,11 @@ use Go\Aop\Intercept\Joinpoint;
  *
  * @api
  */
-final class BeforeInterceptor extends BaseInterceptor implements AdviceBefore
+final class BeforeInterceptor extends AbstractInterceptor implements AdviceBefore
 {
-    /**
-     * Before invoker for joinpoint
-     *
-     * @param Joinpoint $joinpoint the concrete joinpoint
-     *
-     * @return mixed the result of the call to {@link Joinpoint::proceed()},
-     */
-    public function invoke(Joinpoint $joinpoint)
+    public function invoke(Joinpoint $joinpoint): mixed
     {
-        $adviceMethod = $this->adviceMethod;
-        $adviceMethod($joinpoint);
+        ($this->adviceMethod)($joinpoint);
 
         return $joinpoint->proceed();
     }

@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -8,53 +10,43 @@
  * with this source code in the file LICENSE.
  */
 
-
 namespace Go\Aop\Pointcut;
+
+use Dissect\Lexer\Lexer;
+use Go\Core\AspectContainer;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class PointcutParserTest defines common check for valid grammar parsing
  */
-use Dissect\Lexer\Lexer;
-use Doctrine\Common\Annotations\Reader;
-use Go\Core\AspectContainer;
-
-class PointcutParserTest extends \PHPUnit_Framework_TestCase
+class PointcutParserTest extends TestCase
 {
-    /**
-     * @var null|Lexer
-     */
-    protected $lexer;
-
-    /**
-     * @var null|PointcutParser
-     */
-    protected $parser;
+    protected Lexer $lexer;
+    protected PointcutParser $parser;
 
     /**
      * {@inheritdoc}
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
         $this->lexer  = new PointcutLexer();
         $container    = $this->createMock(AspectContainer::class);
-        $annotReader  = $this->createMock(Reader::class);
-        $this->parser = new PointcutParser(new PointcutGrammar($container, $annotReader));
+        $this->parser = new PointcutParser(new PointcutGrammar($container));
     }
 
     /**
      * Tests parsing
-     *
-     * @dataProvider validPointcutDefinitions
      */
-    public function testParsingExpression($pointcutExpression)
+    #[\PHPUnit\Framework\Attributes\DataProvider('validPointcutDefinitions')]
+    public function testParsingExpression(string $pointcutExpression): void
     {
         $stream = $this->lexer->lex($pointcutExpression);
         $result = $this->parser->parse($stream);
         $this->assertNotNull($result);
     }
 
-    public function validPointcutDefinitions()
+    public static function validPointcutDefinitions(): array
     {
         return [
             // Execution pointcuts
@@ -94,9 +86,6 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
 
             // Parenthesis
             ['within(DemoInterface+) && ( within(**) || within(*) )'],
-
-            // Control flow execution pointcuts
-            ['cflowbelow(execution(public Example->method(*)))'],
 
             // Function pointcut
             ['execution(Demo\*\Test\**\*(*))'],

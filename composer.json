@@ -1,6 +1,6 @@
 {
     "require": {
-        "goaop/framework": "^2.2",
+        "goaop/framework": "^4.0",
         "psr/log": "^1.0",
         "monolog/monolog": "^2.10",
         "doctrine/annotations": "^1.14"

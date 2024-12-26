@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -10,109 +12,70 @@
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\AspectException;
 use Go\Aop\Pointcut;
-use Go\Aop\PointFilter;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\ParserReflection\ReflectionFileNamespace;
+use ReflectionClass;
+use ReflectionFunction;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * Reference to the pointcut holds an id of pointcut to fetch when needed
  */
-class PointcutReference implements Pointcut
+final class PointcutReference implements Pointcut
 {
-    /**
-     * @var Pointcut
-     */
-    protected $pointcut;
-
-    /**
-     * Name of the pointcut to fetch from the container
-     *
-     * @var string
-     */
-    private $pointcutName;
-
-    /**
-     * Instance of aspect container
-     *
-     * @var AspectContainer
-     */
-    private $container;
+    private ?Pointcut $pointcut = null;
 
     /**
      * Pointcut reference constructor
      *
-     * @param AspectContainer $container Instance of container
-     * @param string $pointcutName Referenced pointcut
+     * @param string $pointcutId Name of the pointcut to fetch from the container
      */
-    public function __construct(AspectContainer $container, $pointcutName)
-    {
-        $this->container    = $container;
-        $this->pointcutName = $pointcutName;
+    public function __construct(
+        private AspectContainer $container,
+        private readonly string $pointcutId
+    ) {}
+
+    public function matches(
+        ReflectionClass|ReflectionFileNamespace                $context,
+        ReflectionMethod|ReflectionProperty|ReflectionFunction $reflector = null,
+        object|string                                          $instanceOrScope = null,
+        array                                                  $arguments = null
+    ): bool {
+        return $this->getPointcut()->matches($context, $reflector, $instanceOrScope, $arguments);
     }
 
-    /**
-     * Performs matching of point of code
-     *
-     * @param mixed $point Specific part of code, can be any Reflection class
-     * @param null|mixed $context Related context, can be class or namespace
-     * @param null|string|object $instance Invocation instance or string for static calls
-     * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
-     */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
-    {
-        return $this->getPointcut()->matches($point, $context, $instance, $arguments);
-    }
-
-    /**
-     * Returns the kind of point filter
-     *
-     * @return integer
-     */
-    public function getKind()
+    public function getKind(): int
     {
         return $this->getPointcut()->getKind();
     }
 
-    /**
-     * Return the class filter for this pointcut.
-     *
-     * @return PointFilter
-     */
-    public function getClassFilter()
+    public function __sleep(): array
     {
-        return $this->getPointcut()->getClassFilter();
+        return ['pointcutId'];
+    }
+
+    public function __wakeup(): void
+    {
+        $this->container = AspectKernel::getInstance()->getContainer();
     }
 
     /**
      * Returns a real pointcut from the container
-     *
-     * @return Pointcut
      */
-    public function getPointcut()
+    private function getPointcut(): Pointcut
     {
-        if (!$this->pointcut) {
-            $this->pointcut = $this->container->getPointcut($this->pointcutName);
+        if (!isset($this->pointcut)) {
+            $pointcutValue = $this->container->getValue($this->pointcutId);
+            if (!$pointcutValue instanceof Pointcut) {
+                throw new AspectException("Reference {$this->pointcutId} points not to a Pointcut.");
+            }
+            $this->pointcut = $pointcutValue;
         }
 
         return $this->pointcut;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function __sleep()
-    {
-        return ['pointcutName'];
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function __wakeup()
-    {
-        $this->container = AspectKernel::getInstance()->getContainer();
     }
 }

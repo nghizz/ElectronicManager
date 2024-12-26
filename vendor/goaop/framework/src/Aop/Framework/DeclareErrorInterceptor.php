@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -10,7 +12,9 @@
 
 namespace Go\Aop\Framework;
 
+use Closure;
 use Go\Aop\Intercept\Joinpoint;
+use Stringable;
 
 /**
  * Interceptor to dynamically trigger an user notice/warning/error on method call
@@ -18,107 +22,47 @@ use Go\Aop\Intercept\Joinpoint;
  * This interceptor can be used as active replacement for the "deprecated" tag or to notify about
  * probable issues with specific method.
  */
-class DeclareErrorInterceptor extends BaseInterceptor
+final class DeclareErrorInterceptor extends AbstractInterceptor
 {
-
-    /**
-     * Error message to show for this interceptor
-     *
-     * @var string
-     */
-    private $message;
-
-    /**
-     * Default level of error
-     *
-     * @var int
-     */
-    private $level;
-
     /**
      * Default constructor for interceptor
      *
-     * @param string $message Text message for error
-     * @param int $level Level of error
-     * @param string|null $pointcutExpression Pointcut expression
+     * @param (string&non-empty-string) $message Error message to show for this interceptor
+     * @param int&(E_USER_NOTICE|E_USER_WARNING|E_USER_ERROR|E_USER_DEPRECATED) $level Default level of error, only E_USER_* constants
      */
-    public function __construct($message, $level, $pointcutExpression)
-    {
-        $adviceMethod  = self::getDeclareErrorAdvice();
-        $this->message = $message;
-        $this->level   = $level;
+    public function __construct(
+        protected string $message,
+        protected int $level,
+        string $pointcutExpression
+    ) {
+        $adviceMethod = self::declareErrorAdvice(...);
         parent::__construct($adviceMethod, -256, $pointcutExpression);
     }
 
-    /**
-     * Serializes an interceptor into string representation
-     *
-     * @return string the string representation of the object or null
-     */
-    public function serialize()
+    public static function unserializeAdvice(array $adviceData): Closure
     {
-        $vars = array_filter(get_object_vars($this));
-        unset($vars['adviceMethod']);
-
-        return serialize($vars);
+        return self::declareErrorAdvice(...);
     }
 
-    /**
-     * Unserialize an interceptor from the string
-     *
-     * @param string $serialized The string representation of the object.
-     * @return void
-     */
-    public function unserialize($serialized)
+    public function invoke(Joinpoint $joinpoint): mixed
     {
-        $vars = unserialize($serialized);
-        $vars['adviceMethod'] = self::getDeclareErrorAdvice();
-        foreach ($vars as $key => $value) {
-            $this->$key = $value;
-        }
+        ($this->adviceMethod)($joinpoint, $this->message, $this->level);
+
+        return $joinpoint->proceed();
     }
 
     /**
      * Returns an advice
-     *
-     * @return \Closure
      */
-    private static function getDeclareErrorAdvice()
+    private static function declareErrorAdvice(Stringable $joinPoint, string $message, int $level): void
     {
-        static $adviceMethod = null;
-        if (!$adviceMethod) {
-            $adviceMethod = function ($object, $reflectorName, $message, $level = E_USER_NOTICE) {
-                $class   = is_string($object) ? $object : get_class($object);
-                $message = vsprintf('[AOP Declare Error]: %s has an error: "%s"', [
-                    $class . '->' . $reflectorName,
-                    $message
-                ]);
-                trigger_error($message, $level);
-            };
-        }
-
-        return $adviceMethod;
-    }
-
-    /**
-     * Implement this method to perform extra treatments before and
-     * after the invocation. Polite implementations would certainly
-     * like to invoke {@link Joinpoint::proceed()}.
-     *
-     * @param Joinpoint $joinpoint the method invocation joinpoint
-     *
-     * @return mixed the result of the call to {@link Joinpoint::proceed()}
-     */
-    public function invoke(Joinpoint $joinpoint)
-    {
-        $reflection    = $joinpoint->getStaticPart();
-        $reflectorName = 'unknown';
-        if ($reflection && method_exists($reflection, 'getName')) {
-            $reflectorName = $reflection->getName();
-        }
-        $adviceMethod = $this->adviceMethod;
-        $adviceMethod($joinpoint->getThis(), $reflectorName, $this->message, $this->level);
-
-        return $joinpoint->proceed();
+        $message = vsprintf(
+            '[AOP Declare Error]: %s has an error: "%s"',
+            [
+                (string) $joinPoint,
+                $message
+            ]
+        );
+        trigger_error($message, $level);
     }
 }

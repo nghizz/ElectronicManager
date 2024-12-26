@@ -1,0 +1,68 @@
+{
+    "name": "goaop/dissect",
+    "description": "A set of tools for lexical and syntactical analysis written in pure PHP",
+    "version": "3.0.0",
+    "type": "library",
+    "homepage": "https://github.com/goaop/dissect",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jakub Lédl",
+            "email": "jakubledl@gmail.com",
+            "homepage": "https://github.com/jakubledl"
+        },
+        {
+            "name": "WalterWoshid",
+            "email": "wotschel.valentin@googlemail.com",
+            "homepage": "https://github.com/WalterWoshid"
+        }
+    ],
+    "keywords": [
+        "lexing",
+        "parsing",
+        "ast",
+        "parser"
+    ],
+    "bin": [
+        "bin/dissect.php",
+        "bin/dissect"
+    ],
+    "scripts": {
+        "test": "phpunit",
+        "test-coverage": "phpunit --coverage-html tests/coverage"
+    },
+    "require": {
+        "php": "^8.2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0.3",
+        "rector/rector": "^1.0",
+        "symfony/console": ">=6.0"
+    },
+    "suggest": {
+        "symfony/console": "for the command-line tool"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dissect\\": [
+                "src/"
+            ]
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Dissect\\": [
+                "tests/"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "extra": {
+        "branch-alias": {
+            "dev-master": "3.0-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

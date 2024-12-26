@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -12,10 +14,11 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Advice;
 use Go\Aop\AdviceAfter;
-use Go\Aop\AdviceBefore;
 use Go\Aop\AdviceAround;
+use Go\Aop\AdviceBefore;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
+use Go\Aop\OrderedAdvice;
 
 /**
  *  Abstract joinpoint for framework
@@ -30,71 +33,62 @@ use Go\Aop\Intercept\Joinpoint;
 abstract class AbstractJoinpoint implements Joinpoint
 {
     /**
-     * List of advices
-     *
-     * @var array|Advice[]|Interceptor[]
-     */
-    protected $advices = [];
-
-    /**
      * Current advice index
-     *
-     * @var int
      */
-    protected $current = 0;
-
-    /**
-     * Stack frames to work with recursive calls or with cross-calls inside object
-     *
-     * @var array
-     */
-    protected $stackFrames = [];
+    protected int $current = 0;
 
     /**
      * Recursion level for invocation
-     *
-     * @var int
      */
-    protected $level = 0;
+    protected int $level = 0;
 
     /**
      * Initializes list of advices for current joinpoint
      *
-     * @param array $advices List of advices
+     * @param array<Interceptor> $advices List of advices (interceptors)
      */
-    public function __construct(array $advices)
-    {
-        $this->advices = $advices;
-    }
+    public function __construct(protected readonly array $advices = []) {}
 
     /**
      * Sorts advices by priority
      *
-     * @param array|Advice[] $advices
-     * @return array|Advice[] Sorted list of advices
+     * @param array<Advice|Interceptor> $advices
+     *
+     * @return array<Advice|Interceptor> Sorted list of advices
      */
-    public static function sortAdvices(array $advices)
+    public static function sortAdvices(array $advices): array
     {
         $sortedAdvices = $advices;
-        uasort($sortedAdvices, function (Advice $first, Advice $second) {
-            switch (true) {
-                case $first instanceof AdviceBefore && !($second instanceof AdviceBefore):
-                    return -1;
-
-                case $first instanceof AdviceAround && !($second instanceof AdviceAround):
-                    return 1;
-
-                case $first instanceof AdviceAfter && !($second instanceof AdviceAfter):
-                    return $second instanceof AdviceBefore ? 1 : -1;
-
-                case ($first instanceof OrderedAdvice && $second instanceof OrderedAdvice):
-                    return $first->getAdviceOrder() - $second->getAdviceOrder();
-
-                default:
-                    return 0;
+        uasort(
+            $sortedAdvices,
+            fn(Advice $first, Advice $second) => match (true) {
+                $first instanceof AdviceBefore && !($second instanceof AdviceBefore) => -1,
+                $first instanceof AdviceAround && !($second instanceof AdviceAround) => 1,
+                $first instanceof AdviceAfter && !($second instanceof AdviceAfter) => $second instanceof AdviceBefore ? 1 : -1,
+                $first instanceof OrderedAdvice && $second instanceof OrderedAdvice => $first->getAdviceOrder() - $second->getAdviceOrder(),
+                default => 0,
             }
-        });
+        );
 
         return $sortedAdvices;
+    }
+
+    /**
+     * Replace concrete advices with list of ids
+     *
+     * @param array<array<array<string, Advice|Interceptor>>> $advices List of advices
+     *
+     * @return array<array<array<string>>> Sorted identifier of advices/interceptors
+     */
+    public static function flatAndSortAdvices(array $advices): array
+    {
+        $flattenAdvices = [];
+        foreach ($advices as $type => $typedAdvices) {
+            foreach ($typedAdvices as $name => $concreteAdvices) {
+                $flattenAdvices[$type][$name] = array_keys(self::sortAdvices($concreteAdvices));
+            }
+        }
+
+        return $flattenAdvices;
     }
 }
