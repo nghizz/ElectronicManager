@@ -1,0 +1,8 @@
+[28-Dec-2024 12:41:09 Europe/Berlin] Directory is writable: C:\xampp\htdocs\ElectronicManager/logs
+[28-Dec-2024 12:41:09 Europe/Berlin] Directory is writable: C:\xampp\htdocs\ElectronicManager/logs
+[28-Dec-2024 12:41:09 Europe/Berlin] Initializing AOP with include paths: C:\xampp\htdocs\ElectronicManager/App, C:\xampp\htdocs\ElectronicManager/admin, C:\xampp\htdocs\ElectronicManager/home
+[28-Dec-2024 12:41:09 Europe/Berlin] LoginController->handleLogin called with username: admin
+[28-Dec-2024 12:41:09 Europe/Berlin] AuthService->login called with username: admin
+[28-Dec-2024 12:41:09 Europe/Berlin] Đã truy vấn dữ liệu từ bảng taikhoan: {"username":"admin","password":"123456"}
+[28-Dec-2024 12:41:09 Europe/Berlin] Đăng nhập thành công: {"username":"admin","password":"123456"}
+[28-Dec-2024 12:41:09 Europe/Berlin] Natigaved to Manage.php with username: admin

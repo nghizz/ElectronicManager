@@ -3,14 +3,14 @@ require_once __DIR__ . '/../../bootstrap.php';
 use App\Controllers\Admin\ProductController;
 
 // Khởi tạo AOP
-\Project\ApplicationAspectKernel::applyAop();
+/* \Project\ApplicationAspectKernel::applyAop(); */
 
 // Gọi ProductController
 $productController = new ProductController();
 $products = $productController->index();
 
 // Ghi log sản phẩm (nếu cần)
-error_log("ProductController index executed with products: " . print_r($products, true));
+/* error_log("ProductController index executed with products: " . print_r($products, true)); */
 
 ?>
 

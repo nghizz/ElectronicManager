@@ -25,6 +25,7 @@ class LoginController
 
             if ($isLoggedIn) {
                 header("Location: Manage.php");
+                error_log("Natigaved to Manage.php with username: $username");
                 exit();
             } else {
                 // Chuyển hướng về trang đăng nhập và thêm thông báo lỗi

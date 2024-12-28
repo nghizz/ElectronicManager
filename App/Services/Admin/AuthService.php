@@ -15,12 +15,16 @@ class AuthService
 
     public function login($username, $password)
     {
+        error_log("AuthService->login called with username: $username");
         $user = $this->userModel->getUserByCredentials($username, $password);
 
         if ($user) {
             $_SESSION['user_id'] = $user['username'];
-            return true;
+            error_log("Đăng nhập thành công: " . json_encode($user));
+            return $user;  // Trả về đối tượng user
         }
-        return false;
+
+        error_log("Đăng nhập thất bại cho username: $username");
+        return null;  // Trả về null nếu không tìm thấy người dùng
     }
 }

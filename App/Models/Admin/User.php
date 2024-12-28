@@ -22,6 +22,8 @@ class User
         $stmt->bindParam(':password', $password);
         $stmt->execute();
 
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        error_log("Đã truy vấn dữ liệu từ bảng taikhoan: " . json_encode($result));
+        return $result;
     }
 }

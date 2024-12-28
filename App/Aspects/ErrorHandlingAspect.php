@@ -17,14 +17,13 @@ class ErrorHandlingAspect implements Aspect
     }
 
     /**
-     * @AfterThrowing(pointcut="execution(public App\Services\..*(..))", throwing="exception")
+     * @AfterThrowing(pointcut="execution(public App\Services\Admin\AuthService->login(*, *))", throwing="exception")
      */
     public function logErrors(MethodInvocation $invocation, \Throwable $exception)
     {
-        $method = $invocation->getMethod()->getName();
-        $className = get_class($invocation->getThis());
-        $errorMessage = $exception->getMessage();
+        $arguments = $invocation->getArguments();
+        $username = $arguments[0] ?? 'unknown';
 
-        $this->logger->error("Lỗi xảy ra: {$errorMessage}", ['trace' => $exception->getTraceAsString()]);
+        $this->logger->error("Error occurred during login for user '{$username}': {$exception->getMessage()}");
     }
 }
