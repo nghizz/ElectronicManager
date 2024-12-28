@@ -1,52 +1,57 @@
 <?php return array (
   AOP_ROOT_DIR . '\\Aspects\\LoggingAspect.php' => 
   array (
-    'filemtime' => 1735231204,
+    'filemtime' => 1735320269,
+    'cacheUri' => NULL,
+  ),
+  AOP_ROOT_DIR . '\\Aspects\\SuccessLoginAspect.php' => 
+  array (
+    'filemtime' => 1735320269,
     'cacheUri' => NULL,
   ),
   AOP_ROOT_DIR . '\\Aspects\\AuthenticationAspect.php' => 
   array (
-    'filemtime' => 1735231204,
+    'filemtime' => 1735320269,
     'cacheUri' => NULL,
   ),
   AOP_ROOT_DIR . '\\Services\\Admin\\AuthService.php' => 
   array (
-    'filemtime' => 1735231204,
+    'filemtime' => 1735320269,
     'cacheUri' => NULL,
   ),
   AOP_ROOT_DIR . '\\Models\\Admin\\User.php' => 
   array (
-    'filemtime' => 1735231204,
+    'filemtime' => 1735320269,
     'cacheUri' => NULL,
   ),
   AOP_ROOT_DIR . '\\Models\\Connection.php' => 
   array (
-    'filemtime' => 1735231204,
+    'filemtime' => 1735320269,
     'cacheUri' => NULL,
   ),
   AOP_ROOT_DIR . '\\Aspects\\ErrorHandlingAspect.php' => 
   array (
-    'filemtime' => 1735231204,
-    'cacheUri' => NULL,
-  ),
-  AOP_ROOT_DIR . '\\Controllers\\Admin\\ProductController.php' => 
-  array (
-    'filemtime' => 1735231204,
-    'cacheUri' => NULL,
-  ),
-  AOP_ROOT_DIR . '\\Services\\Admin\\ProductService.php' => 
-  array (
-    'filemtime' => 1735231204,
-    'cacheUri' => NULL,
-  ),
-  AOP_ROOT_DIR . '\\Models\\Admin\\Product.php' => 
-  array (
-    'filemtime' => 1735231204,
+    'filemtime' => 1735320269,
     'cacheUri' => NULL,
   ),
   AOP_ROOT_DIR . '\\Controllers\\Admin\\LoginController.php' => 
   array (
-    'filemtime' => 1735231063,
+    'filemtime' => 1735320269,
+    'cacheUri' => NULL,
+  ),
+  AOP_ROOT_DIR . '\\Controllers\\Admin\\ProductController.php' => 
+  array (
+    'filemtime' => 1735317975,
+    'cacheUri' => NULL,
+  ),
+  AOP_ROOT_DIR . '\\Services\\Admin\\ProductService.php' => 
+  array (
+    'filemtime' => 1735317975,
+    'cacheUri' => NULL,
+  ),
+  AOP_ROOT_DIR . '\\Models\\Admin\\Product.php' => 
+  array (
+    'filemtime' => 1735317975,
     'cacheUri' => NULL,
   ),
 );

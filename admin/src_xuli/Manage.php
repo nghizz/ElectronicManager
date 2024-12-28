@@ -2,15 +2,9 @@
 require_once __DIR__ . '/../../bootstrap.php';
 use App\Controllers\Admin\ProductController;
 
-// Khởi tạo AOP
-\Project\ApplicationAspectKernel::applyAop();
-
 // Gọi ProductController
 $productController = new ProductController();
 $products = $productController->index();
-
-// Ghi log sản phẩm (nếu cần)
-error_log("ProductController index executed with products: " . print_r($products, true));
 
 ?>
 
@@ -218,9 +212,9 @@ error_log("ProductController index executed with products: " . print_r($products
 
     function menuBtnChange() {
       if (sidebar.classList.contains("open")) {
-        closeBtn.classList.replace("bx-menu", "bx-menu-alt-right");
+        closeBtn.class.replace("bx-menu", "bx-menu-alt-right");
       } else {
-        closeBtn.classList.replace("bx-menu-alt-right", "bx-menu");
+        closeBtn.class.replace("bx-menu-alt-right", "bx-menu");
       }
     }
   </script>

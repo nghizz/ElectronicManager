@@ -1,0 +1,21 @@
+[2024-12-27 19:03:00] Processing login for user 'admin'.
+[2024-12-27 19:03:00] User 'admin' logged in successfully.
+[2024-12-27 19:03:00] Redirecting user 'admin' to Manage.php.
+[2024-12-27 19:03:46] Processing login for user 'adminaa'.
+[2024-12-27 19:03:46] Failed login attempt for user 'adminaa'.
+[2024-12-27 19:03:51] Processing login for user 'adminAA'.
+[2024-12-27 19:03:51] Failed login attempt for user 'adminAA'.
+[2024-12-27 19:05:10] Processing login for user 'adminAA'.
+[2024-12-27 19:05:10] Failed login attempt for user 'adminAA'.
+[2024-12-27 19:08:55] Processing login for user 'admin'.
+[2024-12-27 19:08:55] User 'admin' logged in successfully.
+[2024-12-27 19:08:55] Redirecting user 'admin' to Manage.php.
+[2024-12-27 19:09:55] Error: Tên đăng nhập hoặc mật khẩu không được để trống.
+[2024-12-27 19:10:07] Processing login for user 'admin'.
+[2024-12-27 19:10:07] User 'admin' logged in successfully.
+[2024-12-27 19:10:07] Redirecting user 'admin' to Manage.php.
+[2024-12-27 19:10:59] Error: Tên đăng nhập hoặc mật khẩu không được để trống.
+[2024-12-27 19:11:05] Error: Tên đăng nhập hoặc mật khẩu không được để trống.
+[2024-12-27 19:11:11] Processing login for user 'admin'.
+[2024-12-27 19:11:11] User 'admin' logged in successfully.
+[2024-12-27 19:11:11] Redirecting user 'admin' to Manage.php.

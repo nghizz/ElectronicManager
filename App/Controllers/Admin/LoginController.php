@@ -2,6 +2,9 @@
 
 namespace App\Controllers\Admin;
 
+use App\Aspects\LoggingAspect;
+use App\Aspects\AuthenticationAspect;
+use App\Aspects\ErrorHandlingAspect;
 use App\Services\Admin\AuthService;
 
 class LoginController
@@ -13,24 +16,24 @@ class LoginController
         $this->authService = new AuthService();
     }
 
-    public function handleLogin()
+    public function login($username, $password)
     {
-        if ($_SERVER["REQUEST_METHOD"] === "POST") {
-            $username = $_POST['username'];
-            $password = $_POST['password'];
+        try {
+            AuthenticationAspect::checkCredentials($username, $password);
 
-            error_log("LoginController->handleLogin called with username: $username");
+            LoggingAspect::log("Processing login for user '$username'.");
 
-            $isLoggedIn = $this->authService->login($username, $password);
+            $result = $this->authService->login($username, $password);
 
-            if ($isLoggedIn) {
+            if ($result) {
+                LoggingAspect::log("Redirecting user '$username' to Manage.php.");
                 header("Location: Manage.php");
                 exit();
             } else {
-                // Chuyển hướng về trang đăng nhập và thêm thông báo lỗi
-                header("Location: ../Login.php?error=Lỗi không thể đăng nhập!");
-                exit();
+                echo "Đăng nhập thất bại!";
             }
+        } catch (\Exception $e) {
+            ErrorHandlingAspect::handleError($e);
         }
     }
 }
